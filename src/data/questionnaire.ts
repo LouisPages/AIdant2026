@@ -28,7 +28,7 @@ export const SKIP = "skip";
 export const detailKey = (partId: string) => `${partId}_detail`;
 export const otherKey = (partId: string) => `${partId}_other`;
 
-const situationDetails = {
+export const situationDetails = {
   age: [
     "Maladie d'Alzheimer",
     "Maladie à corps de Lewy",

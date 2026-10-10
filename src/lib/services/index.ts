@@ -7,7 +7,7 @@
  * (Route Handler ou Server Action) qui utilise `@aws-sdk/client-bedrock-runtime`
  * avec les variables définies dans `.env.example`. Les signatures ne changent pas.
  */
-import { getCircle } from "@/data/circles";
+import { detailCircleId, getCircle } from "@/data/circles";
 import { optionLabel, detailKey, otherKey, realValues, type Answers } from "@/data/questionnaire";
 import { resources } from "@/data/resources";
 import { aiSuggestions, articleIds, articleTopics, peopleRecommendations } from "@/data/solutions";
@@ -37,6 +37,18 @@ export async function recommendCircles(answers: Answers): Promise<Recommendation
   const relation = first(answers, "relation");
   const situation = first(answers, "situation");
   const poids = (answers.poids ?? []).filter((p) => p !== "skip");
+  const detail = situation ? answers[detailKey("situation")]?.[0] : undefined;
+
+  // Personnalisation maximale : le premier cercle reprend la maladie ou le handicap précisé.
+  if (detail && detail !== "Autre") {
+    const own = getCircle(detailCircleId(detail));
+    if (own) {
+      picks.push({
+        id: own.id,
+        reason: `Vous accompagnez un proche dont la situation est « ${detail} » : ${own.memberCount.toLocaleString("fr-FR")} aidants vivent la même chose au quotidien, et en parlent ici avec franchise.`,
+      });
+    }
+  }
 
   const relationCircle: Record<string, string> = {
     conjoint: "c-conjoints",
@@ -61,11 +73,10 @@ export async function recommendCircles(answers: Answers): Promise<Recommendation
     accident: "c-accident",
   };
   if (situation) {
-    const detail = answers[detailKey("situation")]?.[0];
     picks.push({
       id: situationCircle[situation],
       reason: detail
-        ? `Vous accompagnez une personne concernée par ${lowerFirst(detail)} : les membres vivent des situations très proches.`
+        ? "Un cercle plus large pour toutes les situations proches de celle de la personne que vous aidez."
         : `La situation de la personne que vous aidez est proche de celle des membres : ${optionLabel("situation", situation)?.toLowerCase()}.`,
     });
   }
@@ -156,21 +167,11 @@ export async function findSimilarThreads(text: string, circleId: string): Promis
   return scored.slice(0, 2).map((x) => x.th);
 }
 
-/** Résumé d'un fil. */
-export async function summarizeThread(thread: Thread): Promise<string> {
-  await wait(600);
-  return (
-    thread.summary ??
-    "Les pairs partagent leur expérience et se rejoignent sur l'importance de prendre le temps, par petites étapes."
-  );
-}
-
 /**
- * Présentation publique pré-écrite à partir des réponses du questionnaire.
- * Plus tard : appel à un petit modèle (Bedrock). L'utilisateur la relit et la modifie.
+ * Présentation publique composée automatiquement (sans IA) à partir des réponses du questionnaire.
+ * L'utilisateur la relit et la modifie.
  */
-export async function generateIntro(answers: Answers): Promise<string> {
-  await wait(1100);
+export function composeIntro(answers: Answers): string {
   const relation = realValues(answers, "relation")[0];
   const other = answers[otherKey("relation")]?.[0];
   const detail = answers[detailKey("situation")]?.[0];
@@ -191,7 +192,7 @@ export async function generateIntro(answers: Answers): Promise<string> {
   };
 
   let first = `${who[relation] ?? "J'accompagne un proche"}${since[depuis] ?? ""}`;
-  if (detail && detail !== "Autre") first += `, concerné par ${lowerFirst(detail)}`;
+  if (detail && detail !== "Autre") first += ` (${lowerFirst(detail)})`;
   first += ".";
 
   const seeks: string[] = [];

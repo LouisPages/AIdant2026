@@ -14,7 +14,7 @@ import { Header } from "@/components/ui/header";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { circles } from "@/data/circles";
+import { allCircles } from "@/data/circles";
 import { describePart, optionLabel, realValues } from "@/data/questionnaire";
 import type { AvatarKey } from "@/data/types";
 import { cn } from "@/lib/cn";
@@ -40,7 +40,7 @@ export default function Profile() {
     setEditing(true);
   };
 
-  const mine = circles.filter((c) => joined.includes(c.id));
+  const mine = allCircles.filter((c) => joined.includes(c.id));
   const topics = [...realValues(answers, "poids"), ...realValues(answers, "recherche")].map((id) => ({
     id,
     label: optionLabel("poids", id) ?? optionLabel("recherche", id) ?? id,
@@ -208,3 +208,4 @@ export default function Profile() {
     </>
   );
 }
+

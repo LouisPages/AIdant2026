@@ -45,6 +45,20 @@ export const members: Record<string, Member> = {
     tone: "sky",
     bio: "Aidant solo depuis 2 ans. Je cherche des solutions de répit.",
   },
+  aubepine: {
+    id: "aubepine",
+    pseudo: "Aubépine",
+    avatar: "moon",
+    tone: "sky",
+    bio: "Je m'occupe de mon frère. Les soirées calmes sont mes petits trésors.",
+  },
+  glycine: {
+    id: "glycine",
+    pseudo: "Glycine",
+    avatar: "flower",
+    tone: "teal",
+    bio: "Aidante depuis 6 ans. J'ai appris à demander de l'aide, et c'est un chemin.",
+  },
   nenuphar: {
     id: "nenuphar",
     pseudo: "Nénuphar",

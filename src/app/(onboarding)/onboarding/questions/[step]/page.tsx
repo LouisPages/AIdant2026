@@ -1,12 +1,12 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { OnboardingShell } from "@/components/onboarding-shell";
 import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { useAppState } from "@/context/app-state";
 import {
   detailKey,
@@ -73,6 +73,9 @@ type PickerProps = {
 };
 
 function ChoiceParts({ question, answers, setPart }: PickerProps) {
+  // Liste de précisions ouverte (partId:optionId), directement sous le bouton de choix.
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
   const select = (partId: string, optionId: string) => {
     const current = realValues(answers, partId);
     const turnOff = current[0] === optionId;
@@ -92,38 +95,94 @@ function ChoiceParts({ question, answers, setPart }: PickerProps) {
             <div className="space-y-2" role="radiogroup" aria-label={part.label ?? question.title}>
               {part.options.map((o) => {
                 const on = selected.includes(o.id);
+                const key = `${part.id}:${o.id}`;
+                const open = on && openKey === key;
+                const chosenDetail = on ? answers[detailKey(part.id)]?.[0] : undefined;
+
+                const onPick = () => {
+                  if (!o.details) {
+                    select(part.id, o.id);
+                    setOpenKey(null);
+                  } else if (!on) {
+                    select(part.id, o.id);
+                    setOpenKey(key);
+                  } else {
+                    setOpenKey(open ? null : key);
+                  }
+                };
+
                 return (
                   <div key={o.id}>
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      onClick={() => select(part.id, o.id)}
+                    <div
                       className={cn(
-                        "pressable flex min-h-12 w-full items-center justify-between gap-3 rounded-control border px-4 py-3 text-left text-body",
+                        "overflow-hidden rounded-control border transition-colors duration-200",
                         on ? "border-teal bg-teal-soft text-teal-dark" : "border-line bg-surface text-ink",
                       )}
                     >
-                      {o.label}
-                      {on && <Check size={20} strokeWidth={1.5} className="shrink-0 text-teal" />}
-                    </button>
+                      <button
+                        type="button"
+                        {...(o.details
+                          ? { "aria-haspopup": "listbox" as const, "aria-expanded": open, "aria-pressed": on }
+                          : { role: "radio", "aria-checked": on })}
+                        onClick={onPick}
+                        className="pressable flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-body"
+                      >
+                        <span className="min-w-0">
+                          {o.label}
+                          {chosenDetail && <span className="mt-0.5 block text-small text-ink-2">{chosenDetail}</span>}
+                        </span>
+                        {o.details ? (
+                          <ChevronDown
+                            size={20}
+                            strokeWidth={1.5}
+                            className={cn("shrink-0 transition-transform duration-200", on ? "text-teal" : "text-mute", open && "rotate-180")}
+                          />
+                        ) : (
+                          on && <Check size={20} strokeWidth={1.5} className="shrink-0 text-teal" />
+                        )}
+                      </button>
 
-                    {on && o.details && (
-                      <div className="animate-fade mt-2">
-                        <Select
+                      {open && o.details && (
+                        <ul
+                          role="listbox"
                           aria-label={`Précisions : ${o.label}`}
-                          value={answers[detailKey(part.id)]?.[0] ?? ""}
-                          onChange={(e) => setPart(detailKey(part.id), e.target.value ? [e.target.value] : [])}
+                          className="animate-fade max-h-64 overflow-y-auto border-t border-teal/30 bg-surface py-1 text-ink"
                         >
-                          <option value="">Préciser la maladie ou le handicap (facultatif)</option>
+                          <li>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={!chosenDetail}
+                              onClick={() => {
+                                setPart(detailKey(part.id), []);
+                                setOpenKey(null);
+                              }}
+                              className="flex min-h-11 w-full items-center justify-between gap-2 px-4 text-left text-small text-ink-2 hover:bg-teal-soft/60"
+                            >
+                              Je ne préfère pas préciser
+                              {!chosenDetail && <Check size={18} strokeWidth={1.5} className="shrink-0 text-teal" />}
+                            </button>
+                          </li>
                           {o.details.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
+                            <li key={d}>
+                              <button
+                                type="button"
+                                role="option"
+                                aria-selected={chosenDetail === d}
+                                onClick={() => {
+                                  setPart(detailKey(part.id), [d]);
+                                  setOpenKey(null);
+                                }}
+                                className="flex min-h-11 w-full items-center justify-between gap-2 px-4 py-2 text-left text-small hover:bg-teal-soft/60"
+                              >
+                                {d}
+                                {chosenDetail === d && <Check size={18} strokeWidth={1.5} className="shrink-0 text-teal" />}
+                              </button>
+                            </li>
                           ))}
-                        </Select>
-                      </div>
-                    )}
+                        </ul>
+                      )}
+                    </div>
 
                     {on && o.other && (
                       <div className="animate-fade mt-2">

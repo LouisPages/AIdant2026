@@ -30,8 +30,6 @@ export const threads: Thread[] = [
         time: "Il y a 15 min",
       },
     ],
-    summary:
-      "Les pairs conseillent un rituel du soir identique chaque jour, une lumière douce et une musique familière. L'effet se voit après environ deux semaines.",
   },
   {
     id: "t2",
@@ -77,6 +75,58 @@ export const threads: Thread[] = [
     time: "Il y a 2 semaines",
     replies: [],
     older: true,
+  },
+
+  // --- Aidants · Maladie de Parkinson ---
+  {
+    id: "tp1",
+    circleId: "c-d-maladie-de-parkinson",
+    authorId: "soleil",
+    kind: "question",
+    title: "Les « moments off » : comment les anticiper ?",
+    body: "Ma femme alterne entre de bonnes heures et des moments où plus rien ne bouge. Je n'arrive pas à prévoir, et je culpabilise de m'impatienter. Comment organisez-vous vos journées ?",
+    time: "Il y a 4 h",
+    replies: [
+      {
+        id: "rp1",
+        authorId: "cedre",
+        body: "On a noté pendant deux semaines les heures de prise et les moments difficiles. Le neurologue a ajusté les horaires, et on planifie maintenant les sorties dans les meilleures plages.",
+        time: "Il y a 3 h",
+      },
+      {
+        id: "rp2",
+        authorId: "tilleul",
+        body: "L'impatience est normale, vous n'avez pas à vous en vouloir. Moi je prévois toujours une activité de repli calme pour ces moments-là.",
+        time: "Il y a 2 h",
+      },
+    ],
+  },
+  {
+    id: "tp2",
+    circleId: "c-d-maladie-de-parkinson",
+    authorId: "plume",
+    kind: "astuce",
+    title: "Un repère visuel pour retrouver le mouvement",
+    body: "Des bandes de ruban adhésif au sol, espacées d'un pas, aident mon mari à déclencher la marche quand il se fige. Ça paraît tout bête mais ça change vraiment les passages de porte.",
+    time: "Hier",
+    replies: [
+      {
+        id: "rp3",
+        authorId: "marguerite",
+        body: "Merci, on va essayer dès ce week-end. Un métronome sur le téléphone fonctionne aussi bien chez nous.",
+        time: "Hier",
+      },
+    ],
+  },
+  {
+    id: "tp3",
+    circleId: "c-d-maladie-de-parkinson",
+    authorId: "nenuphar",
+    kind: "partage",
+    title: "Une bonne journée, ça fait du bien de le dire",
+    body: "Aujourd'hui, promenade d'une heure au parc, sourires et même un peu de musique. Je voulais le partager avec vous qui comprenez ce que ça représente.",
+    time: "Il y a 2 jours",
+    replies: [],
   },
 
   // --- Maladie chronique ou neurodégénérative ---
@@ -126,8 +176,6 @@ export const threads: Thread[] = [
       },
     ],
     resourceId: "repit",
-    summary:
-      "Les pairs conseillent de formuler des demandes précises et ponctuelles, plutôt qu'un appel à l'aide général.",
   },
   {
     id: "t7",

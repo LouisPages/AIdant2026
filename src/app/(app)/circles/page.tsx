@@ -7,19 +7,47 @@ import { formatMembers } from "@/components/circle-card";
 import { CircleIcon } from "@/components/circle-icon";
 import { ComposerSheet } from "@/components/composer-sheet";
 import { ThreadCard } from "@/components/thread-card";
-import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Header } from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { circles, familyLabels } from "@/data/circles";
+import { allCircles, circles, detailCircles, familyLabels } from "@/data/circles";
 import type { Thread } from "@/data/types";
+import { cn } from "@/lib/cn";
 import { getRelevantThreads } from "@/lib/services";
 import { toneFor } from "@/lib/tones";
 
 const norm = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/** Puce de filtre : mêmes couleurs que les tags de cercle des messages ; la sélection se marque par un contour. */
+function FilterChip({
+  tone,
+  selected,
+  onClick,
+  children,
+}: {
+  tone: string;
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={cn(
+        "inline-flex min-h-11 shrink-0 items-center rounded-chip border px-4 text-small font-medium",
+        tone,
+        selected ? "border-current/45" : "border-transparent",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function CirclesHome() {
   const { joined, setJoined, answers, userThreads, userReplies, showToast } = useAppState();
@@ -38,14 +66,18 @@ export default function CirclesHome() {
 
   // Cercles du membre en premier, puis les autres.
   const ordered = useMemo(
-    () => [...circles.filter((c) => joined.includes(c.id)), ...circles.filter((c) => !joined.includes(c.id))],
+    () => [
+      ...detailCircles.filter((c) => joined.includes(c.id)),
+      ...circles.filter((c) => joined.includes(c.id)),
+      ...circles.filter((c) => !joined.includes(c.id)),
+    ],
     [joined],
   );
 
   const q = norm(query.trim());
   const searching = q.length > 0;
   const matches = searching
-    ? ordered.filter((c) => norm(`${c.name} ${c.description} ${familyLabels[c.family]}`).includes(q))
+    ? allCircles.filter((c) => norm(`${c.name} ${c.description} ${familyLabels[c.family]}`).includes(q))
     : [];
   const chips = searching ? matches : ordered;
 
@@ -56,7 +88,7 @@ export default function CirclesHome() {
     return selected.length ? all.filter((t) => selected.includes(t.circleId)) : all;
   }, [userThreads, ranked, selected]);
 
-  const single = selected.length === 1 ? circles.find((c) => c.id === selected[0]) : undefined;
+  const single = selected.length === 1 ? allCircles.find((c) => c.id === selected[0]) : undefined;
   const singleJoined = single ? joined.includes(single.id) : false;
 
   return (
@@ -80,20 +112,19 @@ export default function CirclesHome() {
       <div className="sticky top-0 z-30 bg-bg pb-2 pt-3">
         <div className="flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none]" role="group" aria-label="Filtrer par cercle">
           {!searching && (
-            <Chip selected={selected.length === 0} onClick={() => setSelected([])} className="shrink-0">
+            <FilterChip tone="bg-teal-soft text-teal-dark" selected={selected.length === 0} onClick={() => setSelected([])}>
               Tous
-            </Chip>
+            </FilterChip>
           )}
           {chips.map((c) => (
-            <Chip
+            <FilterChip
               key={c.id}
+              tone={toneFor(c.family).soft}
               selected={selected.includes(c.id)}
               onClick={() => toggle(c.id)}
-              dotClass={toneFor(c.family).dot}
-              className="shrink-0"
             >
               {c.name}
-            </Chip>
+            </FilterChip>
           ))}
         </div>
       </div>
@@ -225,3 +256,4 @@ export default function CirclesHome() {
     </>
   );
 }
+

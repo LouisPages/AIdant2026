@@ -48,7 +48,6 @@ export type Thread = {
   time: string;
   replies: Reply[];
   resourceId?: string;
-  summary?: string;
   older?: boolean;
   /** Bonus de pertinence hardcodé pour la démo (voir getRelevantThreads). */
   relevance?: number;

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { circles, familyLabels } from "@/data/circles";
+import { allCircles, familyLabels } from "@/data/circles";
 import type { Circle } from "@/data/types";
 import { cn } from "@/lib/cn";
 import { recommendCircles, type Recommendation } from "@/lib/services";
@@ -102,14 +102,14 @@ export default function SuggestedCircles() {
   const results = useMemo(() => {
     const q = norm(query.trim());
     if (!q) return [];
-    return circles.filter((c) => norm(`${c.name} ${c.description} ${familyLabels[c.family]}`).includes(q));
+    return allCircles.filter((c) => norm(`${c.name} ${c.description} ${familyLabels[c.family]}`).includes(q));
   }, [query]);
 
   const searching = query.trim().length > 0;
 
   const join = () => {
     setJoined(selected);
-    router.push("/onboarding/first-steps");
+    router.push("/circles");
   };
 
   return (
@@ -181,3 +181,4 @@ export default function SuggestedCircles() {
     </OnboardingShell>
   );
 }
+

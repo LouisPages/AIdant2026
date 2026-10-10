@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Header } from "@/components/ui/header";
 import { useAppState } from "@/context/app-state";
-import { circles } from "@/data/circles";
+import { allCircles } from "@/data/circles";
 import { describePart, questions, SKIP } from "@/data/questionnaire";
 
 type Confirm = null | { kind: "leave"; circleId: string } | { kind: "consent" } | { kind: "delete" };
@@ -20,7 +20,7 @@ export default function DataPage() {
   const { answers, profile, joined, leaveCircle, consent, setConsent, resetAll, showToast } = useAppState();
   const [confirm, setConfirm] = useState<Confirm>(null);
 
-  const mine = circles.filter((c) => joined.includes(c.id));
+  const mine = allCircles.filter((c) => joined.includes(c.id));
 
   const summary = questions.map((q) => {
     const real = q.parts.flatMap((p) => describePart(answers, p.id));
@@ -193,3 +193,4 @@ export default function DataPage() {
     </>
   );
 }
+

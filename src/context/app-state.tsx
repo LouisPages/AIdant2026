@@ -54,7 +54,7 @@ const Ctx = createContext<AppState | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [answers, setAnswers] = useState<Answers>(demoAnswers);
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
-  const [joined, setJoinedState] = useState<string[]>(["c-conjoints", "c-solos"]);
+  const [joined, setJoinedState] = useState<string[]>(["c-d-maladie-de-parkinson", "c-conjoints", "c-solos"]);
   const [userThreads, setUserThreads] = useState<Thread[]>([]);
   const [userReplies, setUserReplies] = useState<Record<string, Reply[]>>({});
   const [statuses, setStatuses] = useState<Record<string, ConversationStatus>>(defaultStatuses);
@@ -159,3 +159,4 @@ export function useGetMember() {
     [profile],
   );
 }
+

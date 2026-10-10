@@ -1,3 +1,4 @@
+import { situationDetails } from "./questionnaire";
 import type { Circle, CircleFamily } from "./types";
 
 export const familyLabels: Record<CircleFamily, string> = {
@@ -146,7 +147,56 @@ const baseCircles: Omit<Circle, "memberCount">[] = [
 
 export const circles: Circle[] = baseCircles.map((c) => ({ ...c, memberCount: memberCounts[c.id] ?? 0 }));
 
-export const getCircle = (id: string) => circles.find((c) => c.id === id);
+/**
+ * Cercles « maladie / handicap » : un cercle par précision possible du questionnaire.
+ * Ils ne sont pas listés dans les filtres tant que le membre ne les a pas rejoints, mais
+ * le premier cercle recommandé reprend la situation précise de la personne aidée.
+ */
+const slug = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+export const detailCircleId = (detail: string) => `c-d-${slug(detail)}`;
+
+const detailCount: Record<string, number> = { "maladie-de-parkinson": 214 };
+
+const detailGroups: { key: keyof typeof situationDetails; icon: string }[] = [
+  { key: "chronique", icon: "feather" },
+  { key: "age", icon: "home" },
+  { key: "handicap", icon: "sprout" },
+  { key: "accident", icon: "mountain" },
+];
+
+export const detailCircles: Circle[] = (() => {
+  const seen = new Set<string>();
+  const list: Circle[] = [];
+  for (const { key, icon } of detailGroups) {
+    for (const detail of situationDetails[key]) {
+      const s = slug(detail);
+      if (detail === "Autre" || seen.has(s)) continue;
+      seen.add(s);
+      const hash = [...s].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 7);
+      list.push({
+        id: detailCircleId(detail),
+        name: `Aidants · ${detail}`,
+        family: "situation",
+        icon,
+        description: `Entre aidants de proches concernés par : ${detail}. Vécu, astuces et questions du quotidien.`,
+        memberCount: detailCount[s] ?? 60 + (hash % 280),
+      });
+    }
+  }
+  return list;
+})();
+
+/** Tous les cercles, y compris ceux de situations précises. */
+export const allCircles: Circle[] = [...circles, ...detailCircles];
+
+export const getCircle = (id: string) => allCircles.find((c) => c.id === id);
 
 export const charter = [
   "Nous parlons avec bienveillance, sans juger.",

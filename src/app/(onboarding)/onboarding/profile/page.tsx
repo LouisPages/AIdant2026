@@ -1,21 +1,26 @@
 "use client";
 
 import { Lock, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { OnboardingShell } from "@/components/onboarding-shell";
 import { Avatar, avatarIcons } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Field, Input } from "@/components/ui/input";
+import { Field, Input, Textarea } from "@/components/ui/input";
 import { useAppState } from "@/context/app-state";
 import { questions } from "@/data/questionnaire";
 import { suggestedPseudos } from "@/data/members";
 import type { AvatarKey } from "@/data/types";
 import { cn } from "@/lib/cn";
+import { composeIntro } from "@/lib/services";
 
 export default function ProfileStep() {
-  const { profile, updateProfile } = useAppState();
+  const router = useRouter();
+  const { profile, updateProfile, answers } = useAppState();
   const [pseudoIdx, setPseudoIdx] = useState(0);
+  // Proposition composée automatiquement à partir des réponses, modifiable.
+  const [bio, setBio] = useState(() => composeIntro(answers));
 
   const shuffle = () => {
     const next = (pseudoIdx + 1) % suggestedPseudos.length;
@@ -23,12 +28,21 @@ export default function ProfileStep() {
     updateProfile({ pseudo: suggestedPseudos[next] });
   };
 
+  const next = () => {
+    updateProfile({ bio: bio.trim() });
+    router.push("/onboarding/circles");
+  };
+
   return (
     <OnboardingShell
       back={`/onboarding/questions/${questions.length}`}
-      title="Votre pseudo"
-      subtitle="Un pseudo et un avatar suffisent. Vous resterez anonyme."
-      footer={<Button href="/onboarding/circles">Voir mes cercles</Button>}
+      title="Votre profil"
+      subtitle="Un pseudo, un avatar et une courte description. Vous resterez anonyme."
+      footer={
+        <Button onClick={next} disabled={!profile.pseudo.trim()}>
+          Voir mes cercles
+        </Button>
+      }
     >
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-3 py-2">
@@ -79,9 +93,18 @@ export default function ProfileStep() {
           </div>
         </div>
 
+        <Field
+          label="Votre description"
+          hint="Proposée d'après vos réponses. Modifiez-la comme vous voulez : les autres membres la verront sur votre profil."
+        >
+          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={280} className="min-h-32" />
+        </Field>
+
         <Card className="flex items-start gap-3 bg-sky-soft shadow-none">
           <Lock size={20} strokeWidth={1.5} className="mt-0.5 shrink-0 text-navy" />
-          <p className="text-small text-ink">Votre nom et vos données Nello restent privés. Vous pourrez changer de pseudo à tout moment.</p>
+          <p className="text-small text-ink">
+            Votre nom et vos données Nello restent privés. Vous pourrez changer de pseudo et de description à tout moment.
+          </p>
         </Card>
       </div>
     </OnboardingShell>

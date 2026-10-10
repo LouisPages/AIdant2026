@@ -49,7 +49,7 @@ export default function SolutionsPage() {
 
             <section>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2>Suggestions de l'IA</h2>
+                <h2>Suggestions de KatIA</h2>
                 <Badge tone="info">
                   <Sparkles size={12} strokeWidth={2} /> IA
                 </Badge>
