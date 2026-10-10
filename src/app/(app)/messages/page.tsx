@@ -7,28 +7,29 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState, useGetMember } from "@/context/app-state";
-import { conversations } from "@/data/conversations";
 import { cn } from "@/lib/cn";
 
 type View = "messages" | "requests";
 
 export default function Messages() {
-  const { statuses, chat } = useAppState();
+  const { statuses, conversations } = useAppState();
   const getMember = useGetMember();
   const [view, setView] = useState<View>("messages");
   const [menu, setMenu] = useState(false);
 
-  const ids = Object.keys(statuses);
+  // Conversations les plus récentes en premier.
+  const lastAt = (id: string) => conversations[id]?.messages.at(-1)?.createdAt ?? "";
+  const ids = Object.keys(statuses).sort((a, b) => lastAt(b).localeCompare(lastAt(a)));
   const incoming = ids.filter((id) => statuses[id] === "pending-in");
   const active = ids.filter((id) => statuses[id] === "accepted");
   const outgoing = ids.filter((id) => statuses[id] === "pending-out");
   const requests = [...incoming, ...outgoing];
 
   const lastText = (id: string) => {
-    const mine = chat[id];
-    if (mine?.length) return `Vous : ${mine[mine.length - 1].text}`;
-    const msgs = conversations.find((c) => c.memberId === id)?.messages ?? [];
-    return msgs.length ? msgs[msgs.length - 1].text : "Demande de contact envoyée";
+    const msgs = conversations[id]?.messages ?? [];
+    const last = msgs[msgs.length - 1];
+    if (!last) return "Demande de contact envoyée";
+    return last.from === "me" ? `Vous : ${last.text}` : last.text;
   };
 
   const row = (id: string, badge?: React.ReactNode) => {

@@ -11,20 +11,18 @@ import { useAppState } from "@/context/app-state";
 import {
   detailKey,
   otherKey,
-  questions,
   realValues,
-  relatedTopics,
-  seedTopics,
   SKIP,
   type Answers,
   type Question,
-} from "@/data/questionnaire";
+} from "@/lib/questionnaire";
 import { cn } from "@/lib/cn";
 
 export default function QuestionStep() {
   const params = useParams<{ step: string }>();
   const router = useRouter();
-  const { answers, setPart } = useAppState();
+  const { answers, setPart, catalog } = useAppState();
+  const { questions } = catalog;
 
   const step = Math.min(Math.max(parseInt(params.step, 10) || 1, 1), questions.length);
   const question = questions[step - 1];
@@ -208,6 +206,7 @@ function ChoiceParts({ question, answers, setPart }: PickerProps) {
 
 /** Choix d'idées en cascade : chaque choix en propose de nouvelles, comme le choix d'artistes sur Spotify. */
 function TopicsPicker({ question, answers, setPart }: PickerProps) {
+  const { seedTopics, relatedTopics } = useAppState().catalog;
   const partOf = (topicId: string) => question.parts.find((p) => p.options.some((o) => o.id === topicId));
   const labelOf = (topicId: string) => partOf(topicId)?.options.find((o) => o.id === topicId)?.label ?? topicId;
 

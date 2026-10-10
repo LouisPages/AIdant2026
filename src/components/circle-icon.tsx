@@ -16,7 +16,7 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
-import type { CircleFamily } from "@/data/types";
+import type { CircleFamily } from "@/lib/types";
 import { cn } from "@/lib/cn";
 import { toneFor } from "@/lib/tones";
 

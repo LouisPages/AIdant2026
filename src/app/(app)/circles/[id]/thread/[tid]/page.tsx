@@ -14,17 +14,16 @@ import { Header } from "@/components/ui/header";
 import { Textarea } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState, useGetMember } from "@/context/app-state";
-import { getCircle } from "@/data/circles";
-import { getThread } from "@/data/threads";
+import { TimeText } from "@/components/time-text";
 import { moderateMessage } from "@/lib/services";
 
 export default function ThreadPage() {
   const { id, tid } = useParams<{ id: string; tid: string }>();
-  const { userThreads, userReplies, addReply } = useAppState();
+  const { getCircle, getThread, userReplies, addReply } = useAppState();
   const getMember = useGetMember();
   const [reply, setReply] = useState("");
 
-  const thread = getThread(tid) ?? userThreads.find((t) => t.id === tid);
+  const thread = getThread(tid);
   const circle = getCircle(id);
 
   if (!thread || !circle) {
@@ -60,7 +59,7 @@ export default function ThreadPage() {
             <Avatar avatar={author.avatar} tone={author.tone} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-small font-semibold">{author.pseudo}</p>
-              <p className="text-label text-ink-2">{thread.time}</p>
+              <TimeText value={thread.createdAt} className="block text-label text-ink-2" />
             </div>
             <Badge tone={thread.kind === "question" ? "sky" : "teal"}>{kindLabel[thread.kind]}</Badge>
           </div>
@@ -85,7 +84,7 @@ export default function ThreadPage() {
                     <div className="flex items-center gap-3">
                       <Avatar avatar={m.avatar} tone={m.tone} size="sm" />
                       <p className="flex-1 truncate text-small font-semibold">{m.pseudo}</p>
-                      <span className="text-label text-ink-2">{r.time}</span>
+                      <TimeText value={r.createdAt} className="text-label text-ink-2" />
                     </div>
                     <p className="mt-2 text-body text-ink">{r.body}</p>
                     <PostActions id={r.id} authorId={r.authorId} />

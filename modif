@@ -1,15 +1,1 @@
-Sur la phase de personnalisation :
-- question "Qui accompagnez-vous" : ajouter la possibilité d'écrire
-- question "Quelle est la situation de la personne que vous aidez ?" : mettre une liste déroulante sur chaque choix avec toutes les maladies possibles afin d'ajouter plus de précisions
-- "Votre situation" à la place de "Votre situation professionnelle" : ajouter étudiant
-- Regrouper "Qu'est-ce qui pèse le plus en ce moment ?" et "Qu'êtes-vous venu(e) chercher ici ?" : regrouper en une seule page, dès qu'une réponse est choisit, des nouvelles en lien sont proposés (comme le choix des premiers musiciens sur spotify ou yt music)
-- La présentation est pré-écrite avec un petit modèle IA, et il y a possibilité de le modifier
-
-Sur l'appli :
-- Pour le choix des cercles : mettre le nombre de membres
-- De façon général, pour tout ce qui est tag des cercles, etc, avoir un jeu de couleur plus diversifié
-- Ajouter une barre de recherche pour les "cercles pour vous" lors de la personnalisation
-- Remplacer le contenu de la page Cercle par celui de la page Découvrir, de la façon suivante : comme sur Youtube avec des onglets en haut, on est dans l'onglet tous qui affiche les messages les plus pertinents sélectionné sur tous les cercles possibles, et on a la possibilité de filtrer par cercles, avec en priorité les cercles auxquels on appartient. Possibilité de rechercher des cercles. On ne choisit pas des catégories des cercles, mais les cercles directement, et les messages les plus pertinents de cercle sont affichés.
-- La page découvrir est remplacé par une page Solutions, qui reprendre des articles Nello pertinent, des suggestions IA, ou des recommandations de contact avec d'autres profils.
-- Page message : au lieu de faire succéder les catégories Demandes/Conversations/Demandes envoyées, mettre en haut le type de conversation (Messages/Demandes), avec un petit logo \/ pour changer. Ne pas séparer les différentes conversations avec bulles
-- Profil : mettre les caractéristiques générales de la personne, et la description publique de la personne, rajouter une section Mes cercles entre Profil et Notifications
+- donnée partenaire nello fiable

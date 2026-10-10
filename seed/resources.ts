@@ -1,0 +1,148 @@
+import type { Resource } from "@/lib/types";
+
+export const resources: Record<string, Resource> = {
+  sommeil: {
+    id: "sommeil",
+    title: "Retrouver un sommeil réparateur quand on est aidant",
+    description: "Des rituels simples pour protéger vos nuits, même quand elles sont agitées.",
+    kind: "Article Nello",
+    minutes: 4,
+    steps: [
+      "Garder des horaires de coucher réguliers, autant que possible.",
+      "Prévoir une courte sieste sans culpabilité dans la journée.",
+      "Demander un relais ponctuel pour récupérer une nuit complète.",
+    ],
+  },
+  droits: {
+    id: "droits",
+    title: "Vos droits d'aidant en 5 minutes",
+    description: "Congé de proche aidant, droit au répit, aides financières : l'essentiel à connaître.",
+    kind: "Guide Nello",
+    minutes: 5,
+    steps: [
+      "Identifier les droits qui correspondent à votre situation.",
+      "Rassembler les justificatifs utiles.",
+      "Être accompagné pour les démarches par un point d'information.",
+    ],
+  },
+  culpabilite: {
+    id: "culpabilite",
+    title: "Comprendre et apaiser la culpabilité de l'aidant",
+    description: "Pourquoi elle est si courante, et comment lui faire une place sans qu'elle prenne toute la place.",
+    kind: "Article Nello",
+    minutes: 6,
+    steps: [
+      "Reconnaître que ce sentiment est partagé par la plupart des aidants.",
+      "Parler de ce que l'on ressent à une personne de confiance.",
+      "S'accorder des temps pour soi, sans les justifier.",
+    ],
+  },
+  repit: {
+    id: "repit",
+    title: "Trouver une solution de répit près de chez vous",
+    description: "Accueil de jour, hébergement temporaire, relayage : les options expliquées simplement.",
+    kind: "Article Nello",
+    minutes: 5,
+    steps: [
+      "Faire le point sur le besoin : quelques heures, un week-end, une semaine.",
+      "Contacter la plateforme de répit de votre département.",
+      "Demander la prise en charge possible selon la situation.",
+    ],
+  },
+  apa: {
+    id: "apa",
+    title: "Allocation personnalisée d'autonomie : les étapes",
+    description: "Constituer le dossier et préparer la visite d'évaluation.",
+    kind: "Aide financière",
+    minutes: 7,
+    steps: [
+      "Rassembler les pièces d'identité et le dernier avis d'imposition.",
+      "Déposer le dossier auprès du conseil départemental.",
+      "Se préparer à la visite d'évaluation à domicile.",
+    ],
+  },
+  mdph: {
+    id: "mdph",
+    title: "Préparer un dossier MDPH sans se perdre",
+    description: "Les pièces à réunir, le projet de vie et les erreurs à éviter, expliqués pas à pas.",
+    kind: "Guide Nello",
+    minutes: 8,
+    steps: [
+      "Demander le formulaire et le certificat médical à jour.",
+      "Rédiger un projet de vie d'une page, avec ses propres mots.",
+      "Garder une copie de tout et noter chaque échange avec la maison départementale.",
+    ],
+  },
+  relayage: {
+    id: "relayage",
+    title: "Le relayage à domicile : se faire remplacer quelques heures ou quelques jours",
+    description: "Comment fonctionne un relais à la maison, qui peut le financer et comment le préparer.",
+    kind: "Article Nello",
+    minutes: 5,
+    steps: [
+      "Préparer une fiche d'habitudes d'une page pour la personne qui prend le relais.",
+      "Contacter la plateforme de répit du département pour connaître les dispositifs.",
+      "Commencer par un temps court pour que chacun prenne ses repères.",
+    ],
+  },
+  ergo: {
+    id: "ergo",
+    title: "Adapter son logement : le rôle de l'ergothérapeute",
+    description: "Prévenir les chutes et faciliter les gestes du quotidien, avec des aides possibles.",
+    kind: "Article Nello",
+    minutes: 6,
+    steps: [
+      "Demander une visite d'ergothérapeute à domicile via le médecin ou le département.",
+      "Prioriser les pièces à risque : salle de bains, escaliers, chambre.",
+      "Se renseigner sur les aides financières disponibles pour les travaux.",
+    ],
+  },
+  sante: {
+    id: "sante",
+    title: "Prendre soin de sa propre santé quand on est aidant",
+    description: "Bilans, fatigue, soutien psychologique : pourquoi et comment se préserver sans culpabiliser.",
+    kind: "Article Nello",
+    minutes: 5,
+    steps: [
+      "Planifier ses propres rendez-vous médicaux comme ceux de la personne aidée.",
+      "Parler de sa fatigue à son médecin traitant.",
+      "Se renseigner sur les groupes de parole et l'écoute téléphonique.",
+    ],
+  },
+  famille: {
+    id: "famille",
+    title: "Parler avec sa famille de l'aide à apporter",
+    description: "Répartir les tâches, poser des demandes précises et désamorcer les tensions entre proches.",
+    kind: "Article Nello",
+    minutes: 6,
+    steps: [
+      "Lister les tâches concrètes et leur fréquence.",
+      "Formuler des demandes précises plutôt que des reproches.",
+      "Proposer l'aide d'un tiers (assistante sociale, médiateur) si le dialogue est bloqué.",
+    ],
+  },
+  vie: {
+    id: "vie",
+    title: "Accompagner un proche en fin de vie",
+    description: "Équipes mobiles, bénévoles d'accompagnement, droits des aidants : ne pas rester seul.",
+    kind: "Guide Nello",
+    minutes: 7,
+    steps: [
+      "Demander à l'équipe soignante de contacter une équipe mobile de soins palliatifs.",
+      "Se faire aider par un bénévole d'accompagnement pour avoir du répit.",
+      "Prévoir un soutien pour soi : proche de confiance ou psychologue.",
+    ],
+  },
+  conge: {
+    id: "conge",
+    title: "Congé de proche aidant : en parler à son employeur",
+    description: "Vos droits, la démarche, et comment l'aborder sereinement.",
+    kind: "Article Nello",
+    minutes: 4,
+    steps: [
+      "Vérifier les conditions de la personne aidée.",
+      "Prévenir l'employeur dans les délais prévus.",
+      "Demander une indemnisation si vous y avez droit.",
+    ],
+  },
+};

@@ -1,6 +1,11 @@
-import type { Thread } from "./types";
+import type { SeedThread } from "./seed-types";
+import { threadsBesoins } from "./threads-besoins";
+import { threadsDetails } from "./threads-details";
+import { threadsLiens } from "./threads-liens";
+import { threadsParcours } from "./threads-parcours";
+import { threadsSituations } from "./threads-situations";
 
-export const threads: Thread[] = [
+const baseThreads: SeedThread[] = [
   // --- Accompagner son conjoint ---
   {
     id: "t1",
@@ -346,4 +351,12 @@ export const threads: Thread[] = [
   },
 ];
 
-export const getThread = (id: string) => threads.find((t) => t.id === id);
+/** Tous les fils de départ (les plus anciens sont triés à l'écriture par le script de seed). */
+export const threads: SeedThread[] = [
+  ...baseThreads,
+  ...threadsLiens,
+  ...threadsSituations,
+  ...threadsParcours,
+  ...threadsBesoins,
+  ...threadsDetails,
+];

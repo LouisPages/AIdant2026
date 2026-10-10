@@ -11,8 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { allCircles, familyLabels } from "@/data/circles";
-import type { Circle } from "@/data/types";
+import type { Circle } from "@/lib/types";
 import { cn } from "@/lib/cn";
 import { recommendCircles, type Recommendation } from "@/lib/services";
 import { familyTone } from "@/lib/tones";
@@ -32,6 +31,7 @@ function SelectableCircle({
   reason?: string;
   highlight?: string;
 }) {
+  const { familyLabels } = useAppState().catalog;
   return (
     <button
       type="button"
@@ -80,7 +80,8 @@ function SelectableCircle({
 
 export default function SuggestedCircles() {
   const router = useRouter();
-  const { answers, setJoined } = useAppState();
+  const { answers, setJoined, catalog } = useAppState();
+  const { circles: allCircles, familyLabels } = catalog;
   const [recs, setRecs] = useState<Recommendation[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -103,7 +104,7 @@ export default function SuggestedCircles() {
     const q = norm(query.trim());
     if (!q) return [];
     return allCircles.filter((c) => norm(`${c.name} ${c.description} ${familyLabels[c.family]}`).includes(q));
-  }, [query]);
+  }, [query, allCircles, familyLabels]);
 
   const searching = query.trim().length > 0;
 

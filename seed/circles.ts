@@ -1,5 +1,6 @@
+import { detailCircleId, slug } from "@/lib/questionnaire";
+import type { Circle, CircleFamily } from "@/lib/types";
 import { situationDetails } from "./questionnaire";
-import type { Circle, CircleFamily } from "./types";
 
 export const familyLabels: Record<CircleFamily, string> = {
   lien: "Lien avec la personne aidée",
@@ -152,16 +153,6 @@ export const circles: Circle[] = baseCircles.map((c) => ({ ...c, memberCount: me
  * Ils ne sont pas listés dans les filtres tant que le membre ne les a pas rejoints, mais
  * le premier cercle recommandé reprend la situation précise de la personne aidée.
  */
-const slug = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-
-export const detailCircleId = (detail: string) => `c-d-${slug(detail)}`;
-
 const detailCount: Record<string, number> = { "maladie-de-parkinson": 214 };
 
 const detailGroups: { key: keyof typeof situationDetails; icon: string }[] = [
@@ -187,6 +178,7 @@ export const detailCircles: Circle[] = (() => {
         icon,
         description: `Entre aidants de proches concernés par : ${detail}. Vécu, astuces et questions du quotidien.`,
         memberCount: detailCount[s] ?? 60 + (hash % 280),
+        detail: true,
       });
     }
   }
@@ -195,8 +187,6 @@ export const detailCircles: Circle[] = (() => {
 
 /** Tous les cercles, y compris ceux de situations précises. */
 export const allCircles: Circle[] = [...circles, ...detailCircles];
-
-export const getCircle = (id: string) => allCircles.find((c) => c.id === id);
 
 export const charter = [
   "Nous parlons avec bienveillance, sans juger.",

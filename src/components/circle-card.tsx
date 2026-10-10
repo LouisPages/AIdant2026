@@ -1,9 +1,11 @@
+"use client";
+
 import { ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
 import { CircleIcon } from "@/components/circle-icon";
 import { Badge } from "@/components/ui/badge";
-import { familyLabels } from "@/data/circles";
-import type { Circle } from "@/data/types";
+import { useAppState } from "@/context/app-state";
+import type { Circle } from "@/lib/types";
 import { familyTone } from "@/lib/tones";
 
 export const formatMembers = (n: number) => `${n.toLocaleString("fr-FR")} aidants`;
@@ -27,6 +29,8 @@ export function CircleCard({
   badge?: React.ReactNode;
   showMembers?: boolean;
 }) {
+  const { catalog } = useAppState();
+  const familyLabels = catalog.familyLabels;
   return (
     <Link
       href={`/circles/${circle.id}`}

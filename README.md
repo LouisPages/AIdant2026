@@ -2,14 +2,21 @@
 
 Démo mobile-first d'un espace de soutien entre pairs pour les aidants (Nello). Hackathon aidants, équipe Kata.
 
-Tout est **hardcodé** : aucun backend, aucune persistance. L'identité visuelle suit [`DESIGN.md`](./DESIGN.md), le périmètre suit [`functional_specifications_v0.md`](./functional_specifications_v0.md).
+Toutes les données (cercles, fils, membres, questionnaire, ressources, solutions, modération) et celles de l'utilisateur (profil, réponses, cercles rejoints, messages, signalements) sont stockées dans **Amazon DynamoDB** (compte Workshop Studio). L'identité visuelle suit [`DESIGN.md`](./DESIGN.md), le périmètre suit [`functional_specifications_v0.md`](./functional_specifications_v0.md).
 
 ## Lancer
 
+1. Copier `.env.example` en `.env.local` et renseigner les identifiants temporaires du Workshop Studio (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`). Ils expirent : les renouveler puis redémarrer le serveur.
+2. Créer et alimenter la base (une seule fois) :
+
 ```bash
 npm install
+npm run db:create   # crée la table DynamoDB « aidants » (idempotent)
+npm run db:seed     # écrit le contenu de départ du dossier seed/ (idempotent)
 npm run dev
 ```
+
+Chaque navigateur reçoit un identifiant de session anonyme (cookie `sid`, géré par `src/proxy.ts`). Ses données sont enregistrées sous `USER#<sid>` avec un TTL de 90 jours, et peuvent être exportées ou supprimées depuis `/profile/data`. Le schéma de la table est documenté dans `src/lib/db/keys.ts`.
 
 Puis ouvrir http://localhost:3000. Le parcours commence par l'écran d'accueil, puis le consentement, le questionnaire (6 écrans), le profil (pseudo, avatar, description proposée automatiquement), puis les cercles recommandés, avant d'arriver sur la page Cercles.
 
@@ -31,23 +38,25 @@ La modération est invisible côté utilisateur : un message publié apparaît s
 ```
 src/app/            routes (groupes : onboarding, app, admin)
 src/components/     composants UI (ui/), barre d'onglets, cartes
-src/context/        état global de la démo (React context)
-src/data/           toutes les données hardcodées
-src/lib/services/   couche « IA » mockée
+src/context/        état de l'interface, alimenté par le contenu et les données de session lus en base
+src/app/actions.ts  Server Actions : toutes les écritures (validation, identité via le cookie de session)
+src/lib/db/         accès DynamoDB (client, schéma des clés, contenu partagé, utilisateur, modération)
+src/lib/services/   couche « IA » : recommandations et modération (règles pour l'instant)
+seed/               contenu de départ, chargé dans DynamoDB par `npm run db:seed`
+scripts/            création de la table et seed
 ```
 
-## Brancher AWS plus tard
+## Brancher Amazon Bedrock
 
-L'interface n'appelle que `src/lib/services/index.ts` :
+Les fonctions de `src/lib/services/index.ts` lisent déjà le contenu dans DynamoDB ; leur classement est encore à base de règles :
 
 - `recommendCircles(answers)` : classement des cercles et explications
 - `moderateMessage(text)` : modération avant publication
 - `detectDistress(text)` : détection de détresse
 - `findSimilarThreads(text, circleId)` : fils déjà traités
-- `composeIntro(answers)` : description composée automatiquement, sans IA (modifiable par l'utilisateur)
 - `getRelevantThreads(joined, answers)` : classement des messages du fil Cercles
 - `recommendSolutions(answers)` : articles, suggestions et aidants recommandés
 
-Pour passer sur Amazon Bedrock : remplacer le corps de ces fonctions par un appel à un Route Handler ou une Server Action utilisant `@aws-sdk/client-bedrock-runtime` (les identifiants restent côté serveur). Les variables d'environnement attendues sont dans `.env.example` (à copier en `.env.local`). Next.js peut être déployé sur AWS Amplify Hosting.
+Pour passer sur Amazon Bedrock : appeler `@aws-sdk/client-bedrock-runtime` depuis le corps de ces fonctions (ce sont des Server Functions : les identifiants restent côté serveur). Les signatures ne changent pas. Les variables d'environnement attendues sont dans `.env.example`. Next.js peut être déployé sur AWS Amplify Hosting.
 
 

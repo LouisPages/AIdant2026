@@ -1,4 +1,4 @@
-import type { CircleFamily } from "@/data/types";
+import type { CircleFamily } from "@/lib/types";
 
 /** Teintes de familles de cercles (voir DESIGN.md, « Teintes de familles de cercles »). */
 export type FamilyTone = "rose" | "lavender" | "sage" | "sand" | "peach";

@@ -89,7 +89,7 @@ export function PostActions({ id, authorId }: { id: string; authorId: string }) 
           <Button
             disabled={!reason}
             onClick={() => {
-              report(id);
+              report(id, reason ?? "Autre");
               setReportOpen(false);
               setReason(null);
               showToast("Merci. Un humain va regarder ce contenu.");

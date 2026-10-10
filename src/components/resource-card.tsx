@@ -5,14 +5,13 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
-import { resources } from "@/data/resources";
 import { useAppState } from "@/context/app-state";
 
 /** Passerelle vers une ressource Nello (UC8). */
 export function ResourceCard({ resourceId }: { resourceId: string }) {
-  const resource = resources[resourceId];
+  const { catalog, showToast } = useAppState();
+  const resource = catalog.resources[resourceId];
   const [open, setOpen] = useState(false);
-  const { showToast } = useAppState();
   if (!resource) return null;
 
   return (

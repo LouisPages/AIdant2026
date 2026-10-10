@@ -1,6 +1,8 @@
-import type { Conversation } from "./types";
+import { moreConversations } from "./conversations-more";
+import type { SeedConversation } from "./seed-types";
 
-export const conversations: Conversation[] = [
+export const conversations: SeedConversation[] = [
+  ...moreConversations,
   {
     memberId: "tilleul",
     status: "accepted",
@@ -127,6 +129,3 @@ export const conversations: Conversation[] = [
     messages: [],
   },
 ];
-
-export const getConversation = (memberId: string) =>
-  conversations.find((c) => c.memberId === memberId);

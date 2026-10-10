@@ -1,5 +1,5 @@
 import { Feather, Flower2, Leaf, Moon, Mountain, Sprout, Sun, Waves, type LucideIcon } from "lucide-react";
-import type { AvatarKey, AvatarTone } from "@/data/types";
+import type { AvatarKey, AvatarTone } from "@/lib/types";
 import { cn } from "@/lib/cn";
 
 export const avatarIcons: Record<AvatarKey, LucideIcon> = {

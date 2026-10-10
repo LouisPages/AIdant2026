@@ -1,19 +1,4 @@
-export type AiSuggestion = {
-  id: string;
-  title: string;
-  text: string;
-  reason: string;
-  href: string;
-  cta: string;
-  /** Mots-clés (identifiants de thèmes du questionnaire) qui rendent la suggestion plus pertinente. */
-  topics: string[];
-};
-
-export type PersonRecommendation = {
-  memberId: string;
-  traits: string[];
-  reason: string;
-};
+import type { AiSuggestion, PersonRecommendation } from "@/lib/types";
 
 export const aiSuggestions: AiSuggestion[] = [
   {
@@ -72,7 +57,20 @@ export const peopleRecommendations: PersonRecommendation[] = [
   },
 ];
 
-export const articleIds = ["sommeil", "repit", "droits", "culpabilite", "conge", "apa"];
+export const articleIds = [
+  "sommeil",
+  "repit",
+  "droits",
+  "culpabilite",
+  "conge",
+  "apa",
+  "mdph",
+  "relayage",
+  "ergo",
+  "sante",
+  "famille",
+  "vie",
+];
 
 /** Articles à remonter en priorité selon les thèmes choisis. */
 export const articleTopics: Record<string, string[]> = {
@@ -82,4 +80,10 @@ export const articleTopics: Record<string, string[]> = {
   culpabilite: ["culpabilite", "peur", "ecoute"],
   conge: ["travail", "temps"],
   apa: ["demarches", "finances", "aides"],
+  mdph: ["demarches", "aides", "finances"],
+  relayage: ["repit", "temps", "fatigue"],
+  ergo: ["aides", "astuces", "peur"],
+  sante: ["fatigue", "sommeil", "ecoute"],
+  famille: ["solitude", "ecoute", "temps"],
+  vie: ["peur", "ecoute", "culpabilite"],
 };

@@ -14,9 +14,8 @@ import { Header } from "@/components/ui/header";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { allCircles } from "@/data/circles";
-import { describePart, optionLabel, realValues } from "@/data/questionnaire";
-import type { AvatarKey } from "@/data/types";
+import { describePart, optionLabel, realValues } from "@/lib/questionnaire";
+import type { AvatarKey } from "@/lib/types";
 import { cn } from "@/lib/cn";
 
 const traits: { label: string; parts: string[] }[] = [
@@ -29,7 +28,8 @@ const traits: { label: string; parts: string[] }[] = [
 ];
 
 export default function Profile() {
-  const { profile, updateProfile, answers, joined, showToast } = useAppState();
+  const { catalog, profile, updateProfile, answers, joined, showToast } = useAppState();
+  const { circles: allCircles, questions } = catalog;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile);
   const [replies, setReplies] = useState(true);
@@ -43,7 +43,7 @@ export default function Profile() {
   const mine = allCircles.filter((c) => joined.includes(c.id));
   const topics = [...realValues(answers, "poids"), ...realValues(answers, "recherche")].map((id) => ({
     id,
-    label: optionLabel("poids", id) ?? optionLabel("recherche", id) ?? id,
+    label: optionLabel(questions, "poids", id) ?? optionLabel(questions, "recherche", id) ?? id,
   }));
 
   return (
@@ -75,7 +75,7 @@ export default function Profile() {
             </div>
             <dl className="divide-y divide-line">
               {traits.map((t) => {
-                const values = t.parts.flatMap((p) => describePart(answers, p));
+                const values = t.parts.flatMap((p) => describePart(questions, answers, p));
                 return (
                   <div key={t.label} className="py-2.5 first:pt-0">
                     <dt className="text-label font-medium text-ink-2">{t.label}</dt>

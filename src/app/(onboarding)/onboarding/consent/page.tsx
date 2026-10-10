@@ -5,7 +5,6 @@ import { useState } from "react";
 import { OnboardingShell } from "@/components/onboarding-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { charter } from "@/data/circles";
 import { useAppState } from "@/context/app-state";
 import { cn } from "@/lib/cn";
 
@@ -32,7 +31,8 @@ const blocks = [
 
 export default function Consent() {
   const [accepted, setAccepted] = useState(false);
-  const { setConsent, clearAnswers } = useAppState();
+  const { setConsent, clearAnswers, catalog } = useAppState();
+  const { charter } = catalog;
 
   return (
     <OnboardingShell

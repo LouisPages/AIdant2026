@@ -8,21 +8,20 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { useAppState, useGetMember } from "@/context/app-state";
-import { getConversation } from "@/data/conversations";
+import { TimeText } from "@/components/time-text";
 import { cn } from "@/lib/cn";
 import { moderateMessage } from "@/lib/services";
 
 export default function Conversation() {
   const { id } = useParams<{ id: string }>();
-  const { statuses, setStatus, chat, sendChat, showToast } = useAppState();
+  const { statuses, conversations, setStatus, sendChat, showToast } = useAppState();
   const getMember = useGetMember();
   const member = getMember(id);
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const status = statuses[id];
-  const base = getConversation(id)?.messages ?? [];
-  const messages = [...base, ...(chat[id] ?? [])];
+  const messages = conversations[id]?.messages ?? [];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -96,7 +95,7 @@ export default function Conversation() {
             >
               {m.text}
             </div>
-            <span className="mt-1 text-label text-ink-2">{m.time}</span>
+            <TimeText value={m.createdAt} variant="chat" className="mt-1 text-label text-ink-2" />
           </div>
         ))}
         <div ref={endRef} />

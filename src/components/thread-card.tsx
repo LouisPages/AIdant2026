@@ -5,9 +5,9 @@ import Link from "next/link";
 import { CircleTag } from "@/components/circle-card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useGetMember } from "@/context/app-state";
-import { getCircle } from "@/data/circles";
-import type { Thread, ThreadKind } from "@/data/types";
+import { TimeText } from "@/components/time-text";
+import { useAppState, useGetMember } from "@/context/app-state";
+import type { Thread, ThreadKind } from "@/lib/types";
 
 export const kindLabel: Record<ThreadKind, string> = {
   question: "Question",
@@ -26,6 +26,7 @@ export function ThreadCard({
   showCircle?: boolean;
 }) {
   const getMember = useGetMember();
+  const { getCircle } = useAppState();
   const author = getMember(thread.authorId);
   const circle = showCircle ? getCircle(thread.circleId) : undefined;
   const replies = thread.replies;
@@ -42,7 +43,7 @@ export function ThreadCard({
         <Avatar avatar={author.avatar} tone={author.tone} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-small font-semibold text-ink">{author.pseudo}</p>
-          <p className="text-label text-ink-2">{thread.time}</p>
+          <TimeText value={thread.createdAt} className="block text-label text-ink-2" />
         </div>
         <Badge tone={thread.kind === "question" ? "sky" : "teal"}>{kindLabel[thread.kind]}</Badge>
       </div>

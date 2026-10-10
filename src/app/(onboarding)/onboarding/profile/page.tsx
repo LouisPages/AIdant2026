@@ -9,15 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { useAppState } from "@/context/app-state";
-import { questions } from "@/data/questionnaire";
-import { suggestedPseudos } from "@/data/members";
-import type { AvatarKey } from "@/data/types";
+import type { AvatarKey } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { composeIntro } from "@/lib/services";
+import { composeIntro } from "@/lib/compose-intro";
 
 export default function ProfileStep() {
   const router = useRouter();
-  const { profile, updateProfile, answers } = useAppState();
+  const { profile, updateProfile, answers, catalog } = useAppState();
+  const { questions, pseudos: suggestedPseudos } = catalog;
   const [pseudoIdx, setPseudoIdx] = useState(0);
   // Proposition composée automatiquement à partir des réponses, modifiable.
   const [bio, setBio] = useState(() => composeIntro(answers));

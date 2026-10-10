@@ -2,16 +2,44 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { demoAnswers, type Answers } from "@/data/questionnaire";
-import { members } from "@/data/members";
-import { conversations } from "@/data/conversations";
-import type { AvatarKey, ChatMessage, ConversationStatus, Member, Reply, Thread, ThreadKind } from "@/data/types";
+import {
+  deleteMyDataAction,
+  publishReplyAction,
+  publishThreadAction,
+  reportAction,
+  requestContactAction,
+  saveAnswersAction,
+  saveConsentAction,
+  saveJoinedAction,
+  saveProfileAction,
+  sendMessageAction,
+  setConversationStatusAction,
+} from "@/app/actions";
+import type { Answers } from "@/lib/questionnaire";
+import type {
+  AvatarKey,
+  Bootstrap,
+  Catalog,
+  Circle,
+  Conversation,
+  ConversationStatus,
+  Member,
+  Reply,
+  Thread,
+  ThreadKind,
+  UserProfile,
+} from "@/lib/types";
 
-export type UserProfile = { pseudo: string; avatar: AvatarKey; bio: string };
+export type { UserProfile };
 
 type NewPost = { kind: ThreadKind; title: string; body: string };
 
 type AppState = {
+  /** Contenu partagé lu dans DynamoDB (cercles, fils, ressources, questionnaire…). */
+  catalog: Catalog;
+  getCircle: (id: string) => Circle | undefined;
+  /** Fil du contenu partagé ou publié par l'utilisateur. */
+  getThread: (id: string) => Thread | undefined;
   answers: Answers;
   setPart: (partId: string, values: string[]) => void;
   clearAnswers: () => void;
@@ -24,50 +52,50 @@ type AppState = {
   addThread: (circleId: string, post: NewPost) => string;
   userReplies: Record<string, Reply[]>;
   addReply: (threadId: string, body: string) => void;
+  conversations: Record<string, Conversation>;
   statuses: Record<string, ConversationStatus>;
   setStatus: (memberId: string, status: ConversationStatus) => void;
   requestContact: (memberId: string) => void;
-  chat: Record<string, ChatMessage[]>;
   sendChat: (memberId: string, text: string) => void;
   reported: string[];
-  report: (id: string) => void;
+  report: (id: string, reason: string) => void;
   consent: boolean;
   setConsent: (v: boolean) => void;
-  resetAll: () => void;
+  /** Supprime toutes les données de l'utilisateur en base et repart d'un profil vierge. */
+  resetAll: () => Promise<void>;
   toast: string | null;
   showToast: (message: string) => void;
 };
 
-const emptyProfile: UserProfile = { pseudo: "Camomille", avatar: "flower", bio: "" };
-
-// Profil de démo (accès direct à l'application, sans passer par la personnalisation).
-const defaultProfile: UserProfile = {
-  ...emptyProfile,
-  bio: "J'accompagne mon conjoint depuis quelques années, concerné par la maladie de Parkinson. La fatigue pèse en ce moment. Je viens ici chercher un peu d'écoute et des astuces du quotidien.",
-};
-
-const defaultStatuses = () =>
-  Object.fromEntries(conversations.map((c) => [c.memberId, c.status])) as Record<string, ConversationStatus>;
-
 const Ctx = createContext<AppState | null>(null);
 
-export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [answers, setAnswers] = useState<Answers>(demoAnswers);
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
-  const [joined, setJoinedState] = useState<string[]>(["c-d-maladie-de-parkinson", "c-conjoints", "c-solos"]);
-  const [userThreads, setUserThreads] = useState<Thread[]>([]);
-  const [userReplies, setUserReplies] = useState<Record<string, Reply[]>>({});
-  const [statuses, setStatuses] = useState<Record<string, ConversationStatus>>(defaultStatuses);
-  const [chat, setChat] = useState<Record<string, ChatMessage[]>>({});
-  const [reported, setReported] = useState<string[]>([]);
-  const [consent, setConsent] = useState(true);
+const newId = (prefix: string) => {
+  const raw = globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+  return `${prefix}${raw}`;
+};
+
+const SAVE_ERROR = "L'enregistrement n'a pas abouti. Vos modifications restent visibles, réessayez dans un instant.";
+
+export function AppStateProvider({ initial, children }: { initial: Bootstrap; children: ReactNode }) {
+  const { catalog, user } = initial;
+
+  const [answers, setAnswers] = useState<Answers>(user.answers);
+  const [profile, setProfile] = useState<UserProfile>(user.profile);
+  const [joined, setJoinedState] = useState<string[]>(user.joined);
+  const [userThreads, setUserThreads] = useState<Thread[]>(user.userThreads);
+  const [userReplies, setUserReplies] = useState<Record<string, Reply[]>>(user.userReplies);
+  const [conversations, setConversations] = useState<Record<string, Conversation>>(user.conversations);
+  const [reported, setReported] = useState<string[]>(user.reported);
+  const [consent, setConsentState] = useState(user.consent);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const counter = useRef(0);
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
+    const timers = saveTimers.current;
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
+      Object.values(timers).forEach(clearTimeout);
     };
   }, []);
 
@@ -77,67 +105,180 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     toastTimer.current = setTimeout(() => setToast(null), 2600);
   }, []);
 
-  const value = useMemo<AppState>(
-    () => ({
+  /** Lance une écriture en base sans bloquer l'interface ; signale l'échec par un message. */
+  const persist = useCallback(
+    (work: Promise<unknown>) => {
+      work.catch(() => showToast(SAVE_ERROR));
+    },
+    [showToast],
+  );
+
+  /** Regroupe les écritures rapprochées (frappe au clavier, choix successifs) en une seule. */
+  const persistSoon = useCallback(
+    (key: string, work: () => Promise<unknown>, delay = 450) => {
+      clearTimeout(saveTimers.current[key]);
+      saveTimers.current[key] = setTimeout(() => persist(work()), delay);
+    },
+    [persist],
+  );
+
+  const answersRef = useRef(answers);
+  const profileRef = useRef(profile);
+
+  const circleById = useMemo(() => new Map(catalog.circles.map((c) => [c.id, c])), [catalog.circles]);
+
+  const value = useMemo<AppState>(() => {
+    const statuses = Object.fromEntries(Object.values(conversations).map((c) => [c.memberId, c.status])) as Record<
+      string,
+      ConversationStatus
+    >;
+
+    const saveAnswers = (next: Answers) => {
+      answersRef.current = next;
+      persistSoon("answers", () => saveAnswersAction(answersRef.current));
+    };
+
+    return {
+      catalog,
+      getCircle: (id) => circleById.get(id),
+      getThread: (id) => userThreads.find((t) => t.id === id) ?? catalog.threads.find((t) => t.id === id),
+
       answers,
-      setPart: (partId, values) => setAnswers((a) => ({ ...a, [partId]: values })),
-      clearAnswers: () => setAnswers({}),
+      setPart: (partId, values) => {
+        const next = { ...answersRef.current, [partId]: values };
+        setAnswers(next);
+        saveAnswers(next);
+      },
+      clearAnswers: () => {
+        setAnswers({});
+        saveAnswers({});
+      },
+
       profile,
-      updateProfile: (patch) => setProfile((p) => ({ ...p, ...patch })),
+      updateProfile: (patch) => {
+        const next = { ...profileRef.current, ...patch };
+        profileRef.current = next;
+        setProfile(next);
+        // Un pseudo vide n'est jamais enregistré (l'écran empêche de continuer tant qu'il est vide).
+        persistSoon("profile", () =>
+          profileRef.current.pseudo.trim() ? saveProfileAction(profileRef.current) : Promise.resolve(),
+        );
+      },
+
       joined,
-      setJoined: (ids) => setJoinedState(ids),
-      leaveCircle: (id) => setJoinedState((j) => j.filter((x) => x !== id)),
+      setJoined: (ids) => {
+        setJoinedState(ids);
+        persist(saveJoinedAction(ids));
+      },
+      leaveCircle: (id) => {
+        const next = joined.filter((x) => x !== id);
+        setJoinedState(next);
+        persist(saveJoinedAction(next));
+      },
+
       userThreads,
       addThread: (circleId, post) => {
-        const id = `u${++counter.current}`;
-        setUserThreads((t) => [
-          { id, circleId, authorId: "me", kind: post.kind, title: post.title, body: post.body, time: "À l'instant", replies: [] },
-          ...t,
-        ]);
+        const id = newId("u");
+        const thread: Thread = {
+          id,
+          circleId,
+          authorId: "me",
+          kind: post.kind,
+          title: post.title,
+          body: post.body,
+          createdAt: new Date().toISOString(),
+          replies: [],
+        };
+        setUserThreads((t) => [thread, ...t]);
+        persist(publishThreadAction({ id, circleId, kind: post.kind, title: post.title, body: post.body }));
         return id;
       },
+
       userReplies,
-      addReply: (threadId, body) =>
-        setUserReplies((r) => ({
-          ...r,
-          [threadId]: [
-            ...(r[threadId] ?? []),
-            { id: `ur${++counter.current}`, authorId: "me", body, time: "À l'instant" },
-          ],
-        })),
-      statuses,
-      setStatus: (memberId, status) => setStatuses((s) => ({ ...s, [memberId]: status })),
-      requestContact: (memberId) =>
-        setStatuses((s) => (s[memberId] ? s : { ...s, [memberId]: "pending-out" })),
-      chat,
-      sendChat: (memberId, text) =>
-        setChat((c) => ({
-          ...c,
-          [memberId]: [
-            ...(c[memberId] ?? []),
-            { id: `c${++counter.current}`, from: "me", text, time: "À l'instant" },
-          ],
-        })),
-      reported,
-      report: (id) => setReported((r) => (r.includes(id) ? r : [...r, id])),
-      consent,
-      setConsent,
-      resetAll: () => {
-        setAnswers({});
-        setProfile(emptyProfile);
-        setJoinedState([]);
-        setUserThreads([]);
-        setUserReplies({});
-        setStatuses(defaultStatuses());
-        setChat({});
-        setReported([]);
-        setConsent(true);
+      addReply: (threadId, body) => {
+        const id = newId("ur");
+        const reply: Reply = { id, authorId: "me", body, createdAt: new Date().toISOString() };
+        setUserReplies((r) => ({ ...r, [threadId]: [...(r[threadId] ?? []), reply] }));
+        persist(publishReplyAction({ id, threadId, body }));
       },
+
+      conversations,
+      statuses,
+      setStatus: (memberId, status) => {
+        setConversations((c) => ({
+          ...c,
+          [memberId]: { memberId, circleId: c[memberId]?.circleId ?? "", messages: c[memberId]?.messages ?? [], status },
+        }));
+        persist(setConversationStatusAction(memberId, status));
+      },
+      requestContact: (memberId) => {
+        if (conversations[memberId]) return;
+        setConversations((c) =>
+          c[memberId] ? c : { ...c, [memberId]: { memberId, circleId: "", status: "pending-out", messages: [] } },
+        );
+        persist(requestContactAction(memberId));
+      },
+      sendChat: (memberId, text) => {
+        const id = newId("c");
+        setConversations((c) => {
+          const conv = c[memberId] ?? { memberId, circleId: "", status: "accepted" as const, messages: [] };
+          return {
+            ...c,
+            [memberId]: {
+              ...conv,
+              messages: [...conv.messages, { id, from: "me", text, createdAt: new Date().toISOString() }],
+            },
+          };
+        });
+        persist(sendMessageAction(memberId, text, id));
+      },
+
+      reported,
+      report: (id, reason) => {
+        setReported((r) => (r.includes(id) ? r : [...r, id]));
+        persist(reportAction(id, reason));
+      },
+
+      consent,
+      setConsent: (v) => {
+        setConsentState(v);
+        persist(saveConsentAction(v));
+      },
+
+      resetAll: async () => {
+        Object.values(saveTimers.current).forEach(clearTimeout);
+        const fresh = await deleteMyDataAction();
+        answersRef.current = fresh.answers;
+        profileRef.current = fresh.profile;
+        setAnswers(fresh.answers);
+        setProfile(fresh.profile);
+        setJoinedState(fresh.joined);
+        setUserThreads(fresh.userThreads);
+        setUserReplies(fresh.userReplies);
+        setConversations(fresh.conversations);
+        setReported(fresh.reported);
+        setConsentState(fresh.consent);
+      },
+
       toast,
       showToast,
-    }),
-    [answers, profile, joined, userThreads, userReplies, statuses, chat, reported, consent, toast, showToast],
-  );
+    };
+  }, [
+    catalog,
+    circleById,
+    answers,
+    profile,
+    joined,
+    userThreads,
+    userReplies,
+    conversations,
+    reported,
+    consent,
+    toast,
+    showToast,
+    persist,
+    persistSoon,
+  ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -148,15 +289,16 @@ export function useAppState() {
   return ctx;
 }
 
+const unknownMember = (id: string): Member => ({ id, pseudo: "Un membre", avatar: "leaf", tone: "sky" });
+
 /** Renvoie un membre ; « me » reflète le profil modifiable de l'utilisateur. */
 export function useGetMember() {
-  const { profile } = useAppState();
+  const { profile, catalog } = useAppState();
   return useCallback(
     (id: string): Member => {
-      if (id === "me") return { id: "me", pseudo: profile.pseudo, avatar: profile.avatar, tone: "teal", bio: profile.bio };
-      return members[id] ?? members.nenuphar;
+      if (id === "me") return { id: "me", pseudo: profile.pseudo, avatar: profile.avatar as AvatarKey, tone: "teal", bio: profile.bio };
+      return catalog.members[id] ?? unknownMember(id);
     },
-    [profile],
+    [profile, catalog.members],
   );
 }
-

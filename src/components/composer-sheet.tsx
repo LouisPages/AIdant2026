@@ -8,7 +8,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { useAppState } from "@/context/app-state";
-import type { Thread, ThreadKind } from "@/data/types";
+import type { Thread, ThreadKind } from "@/lib/types";
 import { findSimilarThreads, moderateMessage } from "@/lib/services";
 
 const kinds: { id: ThreadKind; label: string; placeholder: string }[] = [

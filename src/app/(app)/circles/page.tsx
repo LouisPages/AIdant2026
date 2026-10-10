@@ -13,8 +13,7 @@ import { Header } from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { allCircles, circles, detailCircles, familyLabels } from "@/data/circles";
-import type { Thread } from "@/data/types";
+import type { Thread } from "@/lib/types";
 import { cn } from "@/lib/cn";
 import { getRelevantThreads } from "@/lib/services";
 import { toneFor } from "@/lib/tones";
@@ -49,8 +48,13 @@ function FilterChip({
   );
 }
 
+const FEED_PAGE = 15;
+
 export default function CirclesHome() {
-  const { joined, setJoined, answers, userThreads, userReplies, showToast } = useAppState();
+  const { catalog, joined, setJoined, answers, userThreads, userReplies, showToast } = useAppState();
+  const { circles: allCircles, familyLabels } = catalog;
+  const circles = useMemo(() => allCircles.filter((c) => !c.detail), [allCircles]);
+  const detailCircles = useMemo(() => allCircles.filter((c) => c.detail), [allCircles]);
   const [ranked, setRanked] = useState<Thread[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -71,7 +75,7 @@ export default function CirclesHome() {
       ...circles.filter((c) => joined.includes(c.id)),
       ...circles.filter((c) => !joined.includes(c.id)),
     ],
-    [joined],
+    [joined, circles, detailCircles],
   );
 
   const q = norm(query.trim());
@@ -87,6 +91,11 @@ export default function CirclesHome() {
     const all = [...userThreads, ...(ranked ?? [])];
     return selected.length ? all.filter((t) => selected.includes(t.circleId)) : all;
   }, [userThreads, ranked, selected]);
+
+  // Le fil s'affiche par pages ; le compteur repart de zéro quand on change de filtre.
+  const feedKey = selected.join(",");
+  const [limit, setLimit] = useState({ key: "", n: FEED_PAGE });
+  const visible = limit.key === feedKey ? limit.n : FEED_PAGE;
 
   const single = selected.length === 1 ? allCircles.find((c) => c.id === selected[0]) : undefined;
   const singleJoined = single ? joined.includes(single.id) : false;
@@ -234,7 +243,7 @@ export default function CirclesHome() {
               />
             ) : (
               <ul className="space-y-3">
-                {feed.map((t) => (
+                {feed.slice(0, visible).map((t) => (
                   <li key={t.id} className="animate-screen">
                     <ThreadCard
                       thread={t}
@@ -245,8 +254,16 @@ export default function CirclesHome() {
                 ))}
               </ul>
             )}
-            {feed.length > 0 && (
-              <p className="py-6 text-center text-small text-ink-2">Vous avez tout lu pour l'instant. Prenez soin de vous.</p>
+            {feed.length > visible ? (
+              <div className="pt-4">
+                <Button variant="tertiary" onClick={() => setLimit({ key: feedKey, n: visible + FEED_PAGE })}>
+                  Voir plus d&apos;échanges
+                </Button>
+              </div>
+            ) : (
+              feed.length > 0 && (
+                <p className="py-6 text-center text-small text-ink-2">Vous avez tout lu pour l'instant. Prenez soin de vous.</p>
+              )
             )}
           </section>
         )}

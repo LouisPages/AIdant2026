@@ -13,14 +13,13 @@ import { Card } from "@/components/ui/card";
 import { Header } from "@/components/ui/header";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
-import { charter, familyLabels, getCircle } from "@/data/circles";
-import { threads } from "@/data/threads";
 import { cn } from "@/lib/cn";
 
 export default function CircleFeed() {
   const { id } = useParams<{ id: string }>();
+  const { catalog, getCircle, joined, setJoined, userThreads, userReplies, showToast } = useAppState();
+  const { charter, familyLabels, threads } = catalog;
   const circle = getCircle(id);
-  const { joined, setJoined, userThreads, userReplies, showToast } = useAppState();
   const [composer, setComposer] = useState(false);
   const [charterOpen, setCharterOpen] = useState(false);
   const [older, setOlder] = useState(false);

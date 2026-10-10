@@ -1,28 +1,20 @@
+"use server";
+
 /**
- * Couche de services IA.
- *
- * L'interface utilisateur n'appelle QUE ces fonctions. Aujourd'hui elles
- * renvoient des données hardcodées (voir src/data). Pour brancher AWS
- * (Bedrock, etc.), remplacer le corps des fonctions par un appel serveur
- * (Route Handler ou Server Action) qui utilise `@aws-sdk/client-bedrock-runtime`
- * avec les variables définies dans `.env.example`. Les signatures ne changent pas.
+ * Couche « IA » : l'interface n'appelle que ces fonctions (Server Functions).
+ * Elles lisent le contenu dans DynamoDB. Aujourd'hui le classement reste à base de règles ;
+ * l'appel à Amazon Bedrock (`@aws-sdk/client-bedrock-runtime`, variables de `.env.example`)
+ * s'ajoutera ici sans changer les signatures.
  */
-import { detailCircleId, getCircle } from "@/data/circles";
-import { optionLabel, detailKey, otherKey, realValues, type Answers } from "@/data/questionnaire";
-import { resources } from "@/data/resources";
-import { aiSuggestions, articleIds, articleTopics, peopleRecommendations } from "@/data/solutions";
-import { threads } from "@/data/threads";
-import type { Circle, Resource, Thread } from "@/data/types";
+import { loadCatalog, loadSolutionData } from "@/lib/db/catalog";
+import { detailCircleId, detailKey, optionLabel, realValues, type Answers } from "@/lib/questionnaire";
+import type { AiSuggestion, Circle, PersonRecommendation, Resource, Thread } from "@/lib/types";
 
 export type Recommendation = {
   rank: number;
   circle: Circle;
   reason: string;
 };
-
-const wait = (ms = 350) => new Promise((r) => setTimeout(r, ms));
-
-const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 const first = (answers: Answers, id: string) => {
   const v = answers[id]?.[0];
@@ -31,7 +23,10 @@ const first = (answers: Answers, id: string) => {
 
 /** Classe 5 cercles selon le profil et explique chaque suggestion. */
 export async function recommendCircles(answers: Answers): Promise<Recommendation[]> {
-  await wait();
+  const { circles, questions } = await loadCatalog();
+  const getCircle = (id: string) => circles.find((c) => c.id === id);
+  const label = (partId: string, optionId: string) => optionLabel(questions, partId, optionId);
+
   const picks: { id: string; reason: string }[] = [];
 
   const relation = first(answers, "relation");
@@ -62,7 +57,7 @@ export async function recommendCircles(answers: Answers): Promise<Recommendation
     enfant: "Vous êtes tous parents d'un enfant qui a besoin de soutien : ici, on se comprend sans longues explications.",
     autre: "Vous accompagnez tous un proche : un bon endroit pour poser vos premières questions.",
   };
-  if (relation) {
+  if (relation && relationCircle[relation]) {
     picks.push({ id: relationCircle[relation], reason: relationReason[relation] });
   }
 
@@ -72,12 +67,12 @@ export async function recommendCircles(answers: Answers): Promise<Recommendation
     chronique: "c-neuro",
     accident: "c-accident",
   };
-  if (situation) {
+  if (situation && situationCircle[situation]) {
     picks.push({
       id: situationCircle[situation],
       reason: detail
         ? "Un cercle plus large pour toutes les situations proches de celle de la personne que vous aidez."
-        : `La situation de la personne que vous aidez est proche de celle des membres : ${optionLabel("situation", situation)?.toLowerCase()}.`,
+        : `La situation de la personne que vous aidez est proche de celle des membres : ${label("situation", situation)?.toLowerCase()}.`,
     });
   }
 
@@ -101,7 +96,7 @@ export async function recommendCircles(answers: Answers): Promise<Recommendation
     if (poidsCircle[p]) {
       picks.push({
         id: poidsCircle[p],
-        reason: `Vous nous avez dit que ${optionLabel("poids", p)?.toLowerCase()} pèse en ce moment : des pairs en parlent ici avec douceur.`,
+        reason: `Vous nous avez dit que ${label("poids", p)?.toLowerCase()} pèse en ce moment : des pairs en parlent ici avec douceur.`,
       });
     }
   }
@@ -135,9 +130,8 @@ export async function recommendCircles(answers: Answers): Promise<Recommendation
 export type ModerationVerdict = { decision: "publish" };
 
 /**
- * La modération est invisible côté utilisateur : le message est publié sans
- * écran intermédiaire. Plus tard, cet appel enverra le texte à Bedrock et
- * placera les cas douteux dans la file du back-office.
+ * La modération est invisible côté utilisateur : le message est publié sans écran intermédiaire.
+ * Plus tard, cet appel enverra le texte à Bedrock et placera les cas douteux dans la file du back-office.
  */
 export async function moderateMessage(text: string): Promise<ModerationVerdict> {
   void text;
@@ -153,7 +147,7 @@ export async function detectDistress(text: string): Promise<{ distress: boolean 
 export async function findSimilarThreads(text: string, circleId: string): Promise<Thread[]> {
   const t = text.toLowerCase();
   if (t.trim().length < 15) return [];
-  await wait(250);
+  const { threads } = await loadCatalog();
   const words = t.split(/\W+/).filter((w) => w.length > 4);
   const scored = threads
     .filter((th) => th.kind === "question" && th.replies.length > 0)
@@ -167,48 +161,9 @@ export async function findSimilarThreads(text: string, circleId: string): Promis
   return scored.slice(0, 2).map((x) => x.th);
 }
 
-/**
- * Présentation publique composée automatiquement (sans IA) à partir des réponses du questionnaire.
- * L'utilisateur la relit et la modifie.
- */
-export function composeIntro(answers: Answers): string {
-  const relation = realValues(answers, "relation")[0];
-  const other = answers[otherKey("relation")]?.[0];
-  const detail = answers[detailKey("situation")]?.[0];
-  const depuis = realValues(answers, "depuis")[0];
-  const poids = realValues(answers, "poids");
-  const recherche = realValues(answers, "recherche");
-
-  const who: Record<string, string> = {
-    conjoint: "J'accompagne mon conjoint",
-    parent: "J'aide l'un de mes parents",
-    enfant: "Je suis le parent d'un enfant qui a besoin de soutien",
-    autre: other ? `J'accompagne un proche (${other})` : "J'accompagne un proche",
-  };
-  const since: Record<string, string> = {
-    "moins-1": " depuis moins d'un an",
-    "1-3": " depuis quelques années",
-    "plus-3": " depuis plus de trois ans",
-  };
-
-  let first = `${who[relation] ?? "J'accompagne un proche"}${since[depuis] ?? ""}`;
-  if (detail && detail !== "Autre") first += ` (${lowerFirst(detail)})`;
-  first += ".";
-
-  const seeks: string[] = [];
-  if (recherche.includes("ecoute")) seeks.push("un peu d'écoute");
-  if (recherche.includes("astuces")) seeks.push("des astuces du quotidien");
-  if (recherche.includes("partager")) seeks.push("partager mon expérience");
-  if (recherche.includes("lire")) seeks.push("lire et apprendre des autres");
-  let second = seeks.length ? `Je viens ici chercher ${seeks.join(" et ")}.` : "Je viens ici pour échanger avec des personnes qui me comprennent.";
-  if (poids.includes("fatigue")) second = `La fatigue pèse en ce moment. ${second}`;
-
-  return `${first} ${second}`;
-}
-
 /** Messages les plus pertinents, tous cercles confondus. Les cercles du membre passent en premier. */
 export async function getRelevantThreads(joined: string[], answers: Answers): Promise<Thread[]> {
-  await wait(150);
+  const { threads } = await loadCatalog();
   const keywords: Record<string, string[]> = {
     fatigue: ["fatigue", "nuit", "sommeil"],
     sommeil: ["nuit", "sommeil"],
@@ -243,20 +198,21 @@ export async function getRelevantThreads(joined: string[], answers: Answers): Pr
 
 export type Solutions = {
   articles: Resource[];
-  suggestions: typeof aiSuggestions;
-  people: typeof peopleRecommendations;
+  suggestions: AiSuggestion[];
+  people: PersonRecommendation[];
 };
 
 /** Articles Nello, suggestions IA et aidants à découvrir, triés selon les thèmes choisis. */
 export async function recommendSolutions(answers: Answers): Promise<Solutions> {
-  await wait(250);
+  const [{ resources }, { suggestions, people }] = await Promise.all([loadCatalog(), loadSolutionData()]);
   const interests = [...realValues(answers, "poids"), ...realValues(answers, "recherche")];
   const rank = (topics: string[]) => topics.filter((t) => interests.includes(t)).length;
-  const articles = articleIds
-    .map((id) => ({ id, s: rank(articleTopics[id] ?? []) }))
+  const articles = Object.values(resources)
+    .filter((r) => r.articleOrder !== undefined)
+    .sort((a, b) => (a.articleOrder ?? 0) - (b.articleOrder ?? 0))
+    .map((r) => ({ r, s: rank(r.topics ?? []) }))
     .sort((a, b) => b.s - a.s)
-    .map((x) => resources[x.id])
-    .filter(Boolean);
-  const suggestions = [...aiSuggestions].sort((a, b) => rank(b.topics) - rank(a.topics));
-  return { articles, suggestions, people: peopleRecommendations };
+    .map((x) => x.r);
+  const ranked = [...suggestions].sort((a, b) => rank(b.topics) - rank(a.topics));
+  return { articles, suggestions: ranked, people };
 }

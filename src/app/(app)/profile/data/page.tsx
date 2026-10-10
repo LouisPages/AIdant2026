@@ -10,20 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Header } from "@/components/ui/header";
 import { useAppState } from "@/context/app-state";
-import { allCircles } from "@/data/circles";
-import { describePart, questions, SKIP } from "@/data/questionnaire";
+import { exportMyDataAction } from "@/app/actions";
+import { describePart, SKIP } from "@/lib/questionnaire";
 
 type Confirm = null | { kind: "leave"; circleId: string } | { kind: "consent" } | { kind: "delete" };
 
 export default function DataPage() {
   const router = useRouter();
-  const { answers, profile, joined, leaveCircle, consent, setConsent, resetAll, showToast } = useAppState();
+  const { catalog, answers, joined, leaveCircle, consent, setConsent, resetAll, showToast } = useAppState();
+  const { circles: allCircles, questions } = catalog;
   const [confirm, setConfirm] = useState<Confirm>(null);
+  const [busy, setBusy] = useState(false);
 
   const mine = allCircles.filter((c) => joined.includes(c.id));
 
   const summary = questions.map((q) => {
-    const real = q.parts.flatMap((p) => describePart(answers, p.id));
+    const real = q.parts.flatMap((p) => describePart(questions, answers, p.id));
     const skipped = q.parts.some((p) => (answers[p.id] ?? []).includes(SKIP));
     return {
       id: q.id,
@@ -32,22 +34,21 @@ export default function DataPage() {
     };
   });
 
-  const exportData = () => {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      profile,
-      circles: mine.map((c) => c.name),
-      answers,
-      consent,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "mes-donnees-entre-aidants.json";
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast("Votre export est prêt");
+  /** Export lu directement en base : tout ce qui est enregistré pour cette session. */
+  const exportData = async () => {
+    try {
+      const payload = await exportMyDataAction();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "mes-donnees-entre-aidants.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Votre export est prêt");
+    } catch {
+      showToast("L'export n'a pas abouti, réessayez dans un instant.");
+    }
   };
 
   const close = () => setConfirm(null);
@@ -179,10 +180,18 @@ export default function DataPage() {
         <div className="mt-6 space-y-2">
           <Button
             variant="danger"
-            onClick={() => {
-              resetAll();
-              close();
-              router.push("/");
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await resetAll();
+                close();
+                router.push("/");
+              } catch {
+                showToast("La suppression n'a pas abouti, réessayez dans un instant.");
+              } finally {
+                setBusy(false);
+              }
             }}
           >
             Oui, supprimer mon profil
