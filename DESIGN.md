@@ -45,6 +45,20 @@ Répartition visuelle : **~70 % blanc/whitesmoke · ~20 % teal · ~10 % bleu cie
 | Alerte | `#C99A4B` | `#F8EFDD` |
 | Erreur | `#C46A6A` | `#F7E4E4` |
 
+### Teintes de familles de cercles (accent, très mineur)
+Cinq teintes pastel douces, une par famille de cercles, pour distinguer les tags, icônes et pastilles de filtre. Elles ne servent jamais pour les boutons, les fonds d'écran ni la navigation.
+
+| Famille | Fond | Texte / pastille |
+|---|---|---|
+| Lien avec la personne aidée | `#F8E4EA` | `#9A4F63` |
+| Situation de la personne aidée | `#ECE8F6` | `#5B4B8A` |
+| Contexte de vie | `#E4EFDF` | `#4F6F45` |
+| Moment du parcours | `#F3ECDD` | `#7A6540` |
+| Besoin du moment | `#FBE8DC` | `#9A5B3A` |
+
+- Rayon des tags : 8 px, même gabarit que les badges (12 px / 500, padding 3 px 10 px).
+- Elles restent des touches : l'écran garde ~70 % de blanc et le teal reste la couleur d'action.
+
 ### Règles d'usage
 - Le fond de chaque écran est `#F5F5F5` ; les cartes et surfaces sont `#FFFFFF`.
 - Chaque écran comporte un seul bouton primaire teal plein.
