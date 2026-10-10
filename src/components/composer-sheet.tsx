@@ -8,8 +8,9 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { useAppState } from "@/context/app-state";
+import { ModerationNotice, useModeration } from "@/components/moderation-notice";
+import { findSimilarThreads } from "@/lib/services";
 import type { Thread, ThreadKind } from "@/lib/types";
-import { findSimilarThreads, moderateMessage } from "@/lib/services";
 
 const kinds: { id: ThreadKind; label: string; placeholder: string }[] = [
   { id: "question", label: "Poser une question", placeholder: "Qu'aimeriez-vous demander aux autres aidants ?" },
@@ -31,6 +32,7 @@ export function ComposerSheet({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [similar, setSimilar] = useState<Thread[]>([]);
+  const { checking, refusal, contested, check, clear, contest } = useModeration(circleId);
 
   useEffect(() => {
     let alive = true;
@@ -51,8 +53,8 @@ export function ComposerSheet({
   const canPublish = body.trim().length >= 3;
 
   const publish = async () => {
-    // La modération est invisible : le message est publié sans écran intermédiaire.
-    await moderateMessage(`${title} ${body}`);
+    // La modération est invisible tant que tout va bien. En cas de refus, le texte reste là pour être reformulé.
+    if (!(await check(`${title} ${body}`))) return;
     addThread(circleId, { kind, title: title.trim() || defaultTitle(kind, body), body: body.trim() });
     setTitle("");
     setBody("");
@@ -72,14 +74,20 @@ export function ComposerSheet({
         </div>
         <Input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            clear();
+          }}
           placeholder="Un titre court (facultatif)"
           maxLength={80}
           aria-label="Titre"
         />
         <Textarea
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => {
+            setBody(e.target.value);
+            clear();
+          }}
           placeholder={current.placeholder}
           className="min-h-36"
           aria-label="Message"
@@ -107,8 +115,10 @@ export function ComposerSheet({
           </div>
         )}
 
-        <Button onClick={publish} disabled={!canPublish}>
-          Publier
+        <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
+
+        <Button onClick={publish} disabled={!canPublish || checking}>
+          {checking ? "Un instant…" : "Publier"}
         </Button>
       </div>
     </BottomSheet>

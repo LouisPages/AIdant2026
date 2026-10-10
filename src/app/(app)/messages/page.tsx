@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 type View = "messages" | "requests";
 
 export default function Messages() {
-  const { statuses, conversations } = useAppState();
+  const { statuses, conversations, preferences } = useAppState();
   const getMember = useGetMember();
   const [view, setView] = useState<View>("messages");
   const [menu, setMenu] = useState(false);
@@ -127,7 +127,16 @@ export default function Messages() {
             </ul>
           )
         ) : requests.length === 0 ? (
-          <EmptyState icon={Inbox} title="Aucune demande" text="Les demandes de contact apparaîtront ici." tone="sky" />
+          <EmptyState
+            icon={Inbox}
+            title="Aucune demande"
+            text={
+              preferences.contactRequests
+                ? "Les demandes de contact apparaîtront ici."
+                : "Vous avez désactivé les demandes de discussion dans votre profil, rubrique Préférences."
+            }
+            tone="sky"
+          />
         ) : (
           <ul className="divide-y divide-line border-y border-line">
             {incoming.map((id) => (

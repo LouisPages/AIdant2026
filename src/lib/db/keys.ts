@@ -11,11 +11,12 @@
  *   QUESTION#nn / META          question du questionnaire
  *   CONTENT#nom / META          textes (charte, libellés, pseudos, aides d'urgence, thèmes liés)
  *   MOD#id / META               cas de modération ; MOD#id / DECISION : décision tracée
+ *   EMB#type#id / META          vecteur d'embedding (binaire float32) et empreinte du texte source (npm run db:embed)
  *   DEMO#user / META            profil de démonstration copié à la création d'une session
  *   DEMO#conversation / CONV#… et MSG#… : conversations de démonstration
  *
  * Données d'un utilisateur anonyme (sid du cookie), toutes avec un TTL :
- *   USER#sid / META             profil, réponses, cercles rejoints, consentement
+ *   USER#sid / META             profil, réponses, cercles rejoints, consentement, préférences
  *   USER#sid / THREAD#id        fils publiés ; REPLY#<fil>#<date>#<id> : réponses publiées
  *   USER#sid / CONV#membre      statut de conversation ; MSG#<membre>#<date>#<id> : messages
  *   USER#sid / REPORT#id        signalements
@@ -45,6 +46,8 @@ export const keys = {
   content: (name: string) => typed("content", `CONTENT#${name}`, "META", name),
   moderation: (id: string, order: number) => typed("moderation", `MOD#${id}`, "META", `${pad(order)}#${id}`),
   moderationDecision: (id: string) => typed("moddecision", `MOD#${id}`, "DECISION", id),
+  /** Vecteur d'un cercle, fil, ressource ou solution (voir `lib/ai/index-store.ts`). */
+  embedding: (kind: string, id: string) => typed("emb", `EMB#${kind}#${id}`, "META", `${kind}#${id}`),
 
   demoUser: (): Keys => ({ PK: "DEMO#user", SK: "META" }),
   demoConv: (memberId: string): Keys => ({ PK: "DEMO#conversation", SK: `CONV#${memberId}` }),
@@ -64,6 +67,13 @@ export const keys = {
   userMsg: (sid: string, memberId: string, id: string, createdAt: string): Keys => ({
     PK: `USER#${sid}`,
     SK: `MSG#${memberId}#${createdAt}#${id}`,
+  }),
+  /** Cas de modération créé par l'application : rangé chez l'auteur (effacé avec ses données), listé par le back-office via GSI1. */
+  userModeration: (sid: string, id: string, createdAt: string): Keys => ({
+    PK: `USER#${sid}`,
+    SK: `MOD#${id}`,
+    GSI1PK: "TYPE#moderation",
+    GSI1SK: `live#${createdAt}#${id}`,
   }),
   userReport: (sid: string, id: string): Keys => ({ PK: `USER#${sid}`, SK: `REPORT#${id}` }),
 };

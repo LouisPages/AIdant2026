@@ -16,6 +16,8 @@ export type Member = {
   avatar: AvatarKey;
   tone: AvatarTone;
   bio?: string;
+  /** Tags de la taxonomie (voir `lib/tags.ts`), utilisés pour recommander des aidants proches. */
+  tags?: string[];
 };
 
 export type CircleFamily = "lien" | "situation" | "contexte" | "parcours" | "besoin";
@@ -29,6 +31,8 @@ export type Circle = {
   memberCount: number;
   /** Cercle « maladie / handicap » issu d'une précision du questionnaire. */
   detail?: boolean;
+  /** Tags de la taxonomie (voir `lib/tags.ts`). */
+  tags?: string[];
 };
 
 export type ThreadKind = "question" | "astuce" | "partage";
@@ -54,6 +58,8 @@ export type Thread = {
   older?: boolean;
   /** Bonus de pertinence éditorial (voir getRelevantThreads). */
   relevance?: number;
+  /** Tags hérités du cercle, plus thèmes et besoins détectés dans le texte (voir `lib/tags.ts`). */
+  tags?: string[];
 };
 
 export type Resource = {
@@ -113,6 +119,11 @@ export type ModerationCase = {
   aiReason: string;
   aiSuggestion?: string;
   actions: { id: string; label: string; recommended?: boolean }[];
+  /** Cas créé par l'application (détresse repérée, relecture demandée), par opposition au contenu de départ. */
+  live?: boolean;
+  /** Pseudo et avatar de l'auteur pour les cas créés par l'application (l'identifiant « me » ne désigne qu'une session). */
+  authorPseudo?: string;
+  authorAvatar?: AvatarKey;
 };
 
 export type ModerationDecision = { actionId: string; label: string; decidedAt: string };
@@ -120,6 +131,18 @@ export type ModerationDecision = { actionId: string; label: string; decidedAt: s
 export type HelpResource = { name: string; detail: string };
 
 export type UserProfile = { pseudo: string; avatar: AvatarKey; bio: string };
+
+/** Choix de l'aidant sur ce qu'il accepte de recevoir ; appliqués dans toute l'application. */
+export type UserPreferences = {
+  /** Autorise les autres aidants à proposer une discussion privée (sinon, les demandes reçues sont masquées). */
+  contactRequests: boolean;
+  /** Affiche « Aidants à découvrir » dans Solutions. */
+  peopleSuggestions: boolean;
+  /** Affiche « Suggestions de KatIA » dans Solutions. */
+  aiSuggestions: boolean;
+  /** Limite le fil des Cercles aux cercles rejoints. */
+  onlyMyCircles: boolean;
+};
 
 /** Contenu partagé, lu dans DynamoDB et transmis au navigateur. */
 export type Catalog = {
@@ -143,6 +166,7 @@ export type UserState = {
   answers: Record<string, string[]>;
   joined: string[];
   consent: boolean;
+  preferences: UserPreferences;
   /** Fils publiés par l'utilisateur, du plus récent au plus ancien. */
   userThreads: Thread[];
   /** Réponses publiées par l'utilisateur, par fil. */

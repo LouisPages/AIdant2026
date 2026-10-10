@@ -11,6 +11,7 @@ import {
   saveAnswersAction,
   saveConsentAction,
   saveJoinedAction,
+  savePreferencesAction,
   saveProfileAction,
   sendMessageAction,
   setConversationStatusAction,
@@ -27,10 +28,11 @@ import type {
   Reply,
   Thread,
   ThreadKind,
+  UserPreferences,
   UserProfile,
 } from "@/lib/types";
 
-export type { UserProfile };
+export type { UserPreferences, UserProfile };
 
 type NewPost = { kind: ThreadKind; title: string; body: string };
 
@@ -59,6 +61,9 @@ type AppState = {
   sendChat: (memberId: string, text: string) => void;
   reported: string[];
   report: (id: string, reason: string) => void;
+  /** Préférences de l'aidant : appliquées partout (demandes de discussion, Solutions, fil des Cercles). */
+  preferences: UserPreferences;
+  updatePreferences: (patch: Partial<UserPreferences>) => void;
   consent: boolean;
   setConsent: (v: boolean) => void;
   /** Supprime toutes les données de l'utilisateur en base et repart d'un profil vierge. */
@@ -87,6 +92,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
   const [conversations, setConversations] = useState<Record<string, Conversation>>(user.conversations);
   const [reported, setReported] = useState<string[]>(user.reported);
   const [consent, setConsentState] = useState(user.consent);
+  const [preferences, setPreferences] = useState<UserPreferences>(user.preferences);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -124,14 +130,17 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
 
   const answersRef = useRef(answers);
   const profileRef = useRef(profile);
+  const preferencesRef = useRef(preferences);
 
   const circleById = useMemo(() => new Map(catalog.circles.map((c) => [c.id, c])), [catalog.circles]);
 
   const value = useMemo<AppState>(() => {
-    const statuses = Object.fromEntries(Object.values(conversations).map((c) => [c.memberId, c.status])) as Record<
-      string,
-      ConversationStatus
-    >;
+    // Sans demandes de discussion, celles déjà reçues sont masquées (elles reviennent si l'aidant change d'avis).
+    const statuses = Object.fromEntries(
+      Object.values(conversations)
+        .filter((c) => preferences.contactRequests || c.status !== "pending-in")
+        .map((c) => [c.memberId, c.status]),
+    ) as Record<string, ConversationStatus>;
 
     const saveAnswers = (next: Answers) => {
       answersRef.current = next;
@@ -212,6 +221,12 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         persist(setConversationStatusAction(memberId, status));
       },
       requestContact: (memberId) => {
+        // Écrire à quelqu'un qui nous avait sollicité (demande masquée) revient à accepter son échange.
+        if (conversations[memberId]?.status === "pending-in") {
+          setConversations((c) => ({ ...c, [memberId]: { ...c[memberId], status: "accepted" } }));
+          persist(setConversationStatusAction(memberId, "accepted"));
+          return;
+        }
         if (conversations[memberId]) return;
         setConversations((c) =>
           c[memberId] ? c : { ...c, [memberId]: { memberId, circleId: "", status: "pending-out", messages: [] } },
@@ -239,6 +254,14 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         persist(reportAction(id, reason));
       },
 
+      preferences,
+      updatePreferences: (patch) => {
+        const next = { ...preferencesRef.current, ...patch };
+        preferencesRef.current = next;
+        setPreferences(next);
+        persistSoon("preferences", () => savePreferencesAction(preferencesRef.current));
+      },
+
       consent,
       setConsent: (v) => {
         setConsentState(v);
@@ -258,6 +281,8 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         setConversations(fresh.conversations);
         setReported(fresh.reported);
         setConsentState(fresh.consent);
+        preferencesRef.current = fresh.preferences;
+        setPreferences(fresh.preferences);
       },
 
       toast,
@@ -274,6 +299,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
     conversations,
     reported,
     consent,
+    preferences,
     toast,
     showToast,
     persist,

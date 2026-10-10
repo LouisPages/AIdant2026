@@ -3,7 +3,7 @@
 import { Send, Sprout } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PostActions } from "@/components/post-actions";
 import { ResourceCard } from "@/components/resource-card";
 import { kindLabel } from "@/components/thread-card";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState, useGetMember } from "@/context/app-state";
 import { TimeText } from "@/components/time-text";
-import { moderateMessage } from "@/lib/services";
+import { ModerationNotice, useModeration } from "@/components/moderation-notice";
 
 export default function ThreadPage() {
   const { id, tid } = useParams<{ id: string; tid: string }>();
@@ -25,6 +25,12 @@ export default function ThreadPage() {
 
   const thread = getThread(tid);
   const circle = getCircle(id);
+  // Le fil est transmis aux juges : une réponse sèche ou moqueuse se lit par rapport à ce qu'elle commente.
+  const scope = useMemo(
+    () => ({ circleId: id, threadId: tid, context: thread ? { parent: `${thread.title}. ${thread.body}` } : undefined }),
+    [id, tid, thread],
+  );
+  const { checking, refusal, contested, check, clear, contest } = useModeration(scope);
 
   if (!thread || !circle) {
     return (
@@ -41,7 +47,7 @@ export default function ThreadPage() {
   const send = async () => {
     const text = reply.trim();
     if (!text) return;
-    await moderateMessage(text);
+    if (!(await check(text))) return;
     addReply(thread.id, text);
     setReply("");
   };
@@ -96,6 +102,11 @@ export default function ThreadPage() {
         </section>
       </main>
 
+      {refusal && (
+        <div className="px-5 pt-3">
+          <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
+        </div>
+      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -105,7 +116,10 @@ export default function ThreadPage() {
       >
         <Textarea
           value={reply}
-          onChange={(e) => setReply(e.target.value)}
+          onChange={(e) => {
+            setReply(e.target.value);
+            clear();
+          }}
           placeholder="Répondre avec bienveillance…"
           rows={1}
           aria-label="Votre réponse"
@@ -113,7 +127,7 @@ export default function ThreadPage() {
         />
         <button
           type="submit"
-          disabled={!reply.trim()}
+          disabled={!reply.trim() || checking}
           aria-label="Envoyer"
           className="pressable flex size-12 shrink-0 items-center justify-center rounded-control bg-teal text-white hover:bg-teal-dark disabled:bg-line disabled:text-mute"
         >

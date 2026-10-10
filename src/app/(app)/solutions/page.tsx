@@ -13,7 +13,7 @@ import { useAppState, useGetMember } from "@/context/app-state";
 import { recommendSolutions, type Solutions as SolutionsData } from "@/lib/services";
 
 export default function SolutionsPage() {
-  const { answers, statuses, requestContact, showToast } = useAppState();
+  const { answers, statuses, requestContact, preferences, showToast } = useAppState();
   const getMember = useGetMember();
   const [data, setData] = useState<SolutionsData | null>(null);
 
@@ -47,6 +47,7 @@ export default function SolutionsPage() {
               </ul>
             </section>
 
+            {preferences.aiSuggestions && (
             <section>
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2>Suggestions de KatIA</h2>
@@ -76,7 +77,9 @@ export default function SolutionsPage() {
                 ))}
               </ul>
             </section>
+            )}
 
+            {preferences.peopleSuggestions && (
             <section>
               <h2 className="mb-3">Aidants à découvrir</h2>
               <ul className="space-y-3">
@@ -131,6 +134,7 @@ export default function SolutionsPage() {
                 })}
               </ul>
             </section>
+            )}
 
             <section className="space-y-3">
               <h2>Bientôt</h2>

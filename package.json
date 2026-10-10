@@ -8,9 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "db:create": "node --env-file-if-exists=.env.local --import tsx scripts/create-table.ts",
-    "db:seed": "node --env-file-if-exists=.env.local --import tsx scripts/seed.ts"
+    "db:seed": "node --env-file-if-exists=.env.local --import tsx scripts/seed.ts",
+    "db:embed": "node --env-file-if-exists=.env.local --import tsx scripts/embed.ts",
+    "ai:probe": "node --env-file-if-exists=.env.local --import tsx scripts/probe-bedrock.mts",
+    "ai:guardrail": "node --env-file-if-exists=.env.local --import tsx scripts/create-guardrail.ts",
+    "ai:eval": "node --env-file-if-exists=.env.local --import tsx scripts/eval-moderation.ts",
+    "ai:check": "node --env-file-if-exists=.env.local --import tsx scripts/check-ai.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock": "^3.1149.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1149.0",
     "@aws-sdk/client-dynamodb": "^3.1149.0",
     "@aws-sdk/lib-dynamodb": "^3.1149.0",
     "lucide-react": "^1.55.0",

@@ -1,6 +1,8 @@
 import { detailCircleId, slug } from "@/lib/questionnaire";
 import type { Circle, CircleFamily } from "@/lib/types";
+import { detailTag } from "@/lib/tags";
 import { situationDetails } from "./questionnaire";
+import { baseCircleTags } from "./tags";
 
 export const familyLabels: Record<CircleFamily, string> = {
   lien: "Lien avec la personne aidée",
@@ -146,7 +148,11 @@ const baseCircles: Omit<Circle, "memberCount">[] = [
   },
 ];
 
-export const circles: Circle[] = baseCircles.map((c) => ({ ...c, memberCount: memberCounts[c.id] ?? 0 }));
+export const circles: Circle[] = baseCircles.map((c) => ({
+  ...c,
+  memberCount: memberCounts[c.id] ?? 0,
+  tags: baseCircleTags[c.id] ?? [],
+}));
 
 /**
  * Cercles « maladie / handicap » : un cercle par précision possible du questionnaire.
@@ -165,6 +171,11 @@ const detailGroups: { key: keyof typeof situationDetails; icon: string }[] = [
 export const detailCircles: Circle[] = (() => {
   const seen = new Set<string>();
   const list: Circle[] = [];
+  // Une même précision peut apparaître dans plusieurs situations (ex. Parkinson : maladie chronique et âge).
+  const situationsOf = new Map<string, Set<string>>();
+  for (const { key } of detailGroups)
+    for (const detail of situationDetails[key])
+      situationsOf.set(slug(detail), (situationsOf.get(slug(detail)) ?? new Set()).add(key));
   for (const { key, icon } of detailGroups) {
     for (const detail of situationDetails[key]) {
       const s = slug(detail);
@@ -179,6 +190,7 @@ export const detailCircles: Circle[] = (() => {
         description: `Entre aidants de proches concernés par : ${detail}. Vécu, astuces et questions du quotidien.`,
         memberCount: detailCount[s] ?? 60 + (hash % 280),
         detail: true,
+        tags: [detailTag(detail), ...[...(situationsOf.get(s) ?? [])].map((k) => `sit:${k}`)],
       });
     }
   }

@@ -1,27 +1,41 @@
-"use client";
+﻿"use client";
 
 import { ChevronLeft, Hourglass, Send } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { useAppState, useGetMember } from "@/context/app-state";
 import { TimeText } from "@/components/time-text";
 import { cn } from "@/lib/cn";
-import { moderateMessage } from "@/lib/services";
+import { ModerationNotice, useModeration } from "@/components/moderation-notice";
 
 export default function Conversation() {
   const { id } = useParams<{ id: string }>();
-  const { statuses, conversations, setStatus, sendChat, showToast } = useAppState();
+  const { statuses, conversations, setStatus, sendChat, preferences, updatePreferences, showToast } = useAppState();
   const getMember = useGetMember();
   const member = getMember(id);
   const [text, setText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const status = statuses[id];
-  const messages = conversations[id]?.messages ?? [];
+  // Demande reçue alors que l'aidant a désactivé les demandes de discussion : elle reste masquée.
+  const hiddenRequest = conversations[id]?.status === "pending-in" && !preferences.contactRequests;
+  const conversationMessages = conversations[id]?.messages;
+  const messages = useMemo(() => (hiddenRequest ? [] : (conversationMessages ?? [])), [hiddenRequest, conversationMessages]);
+  // Les deux derniers échanges sont transmis aux juges pour lire la réponse dans son contexte.
+  const scope = useMemo(
+    () => ({
+      member: id,
+      context: messages.length
+        ? { previous: messages.slice(-2).map((m) => `${m.from === "me" ? "Moi" : "L'autre"} : ${m.text}`) }
+        : undefined,
+    }),
+    [id, messages],
+  );
+  const { checking, refusal, contested, check, clear, contest } = useModeration(scope);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -30,7 +44,7 @@ export default function Conversation() {
   const send = async () => {
     const t = text.trim();
     if (!t) return;
-    await moderateMessage(t);
+    if (!(await check(t))) return;
     sendChat(id, t);
     setText("");
   };
@@ -53,6 +67,28 @@ export default function Conversation() {
       </header>
 
       <main className="flex-1 space-y-3 px-5 pb-4 pt-2">
+        {hiddenRequest && (
+          <div className="rounded-card bg-sky-soft p-4">
+            <h3 className="text-navy">Les demandes de discussion sont désactivées</h3>
+            <p className="mt-1 text-small text-ink-2">
+              Cette demande est masquée, {member.pseudo} n'en sait rien. Vous pouvez la retrouver en réactivant les demandes.
+            </p>
+            <div className="mt-4 space-y-2">
+              <Button
+                onClick={() => {
+                  updatePreferences({ contactRequests: true });
+                  showToast("Les demandes de discussion sont activées");
+                }}
+              >
+                Réactiver les demandes
+              </Button>
+              <Button variant="secondary" href="/messages">
+                Retour aux messages
+              </Button>
+            </div>
+          </div>
+        )}
+
         {status === "pending-in" && (
           <div className="rounded-card bg-sky-soft p-4">
             <h3 className="text-navy">{member.pseudo} souhaite échanger avec vous</h3>
@@ -101,6 +137,11 @@ export default function Conversation() {
         <div ref={endRef} />
       </main>
 
+      {status === "accepted" && refusal && (
+        <div className="px-5 pt-3">
+          <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
+        </div>
+      )}
       {status === "accepted" && (
         <form
           onSubmit={(e) => {
@@ -111,7 +152,10 @@ export default function Conversation() {
         >
           <Textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              clear();
+            }}
             placeholder="Écrire un message…"
             rows={1}
             aria-label="Votre message"
@@ -119,7 +163,7 @@ export default function Conversation() {
           />
           <button
             type="submit"
-            disabled={!text.trim()}
+            disabled={!text.trim() || checking}
             aria-label="Envoyer"
             className="pressable flex size-12 shrink-0 items-center justify-center rounded-control bg-teal text-white hover:bg-teal-dark disabled:bg-line disabled:text-mute"
           >

@@ -73,7 +73,10 @@ export function ModerationView({
         ) : (
           <ul className="space-y-4">
             {list.map((c) => {
-              const author = getMember(c.authorId);
+              // Les cas créés par l'application portent le pseudo de leur auteur : « me » ne désigne que la session en cours.
+              const author = c.live
+                ? { pseudo: c.authorPseudo ?? "Aidant anonyme", avatar: c.authorAvatar ?? "leaf", tone: "teal" as const }
+                : getMember(c.authorId);
               const decision = decisions[c.id];
               return (
                 <li key={c.id} className="animate-screen">

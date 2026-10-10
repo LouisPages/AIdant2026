@@ -7,6 +7,7 @@ import type {
   Reply,
   Thread,
   ThreadKind,
+  UserPreferences,
   UserProfile,
   UserState,
 } from "@/lib/types";
@@ -20,6 +21,7 @@ import {
   updateItem,
   type Item,
 } from "./client";
+import { normalizePreferences } from "@/lib/preferences";
 import { keys, stripKeys } from "./keys";
 
 type DemoUser = {
@@ -103,6 +105,7 @@ function buildState(items: Item[]): UserState {
     answers: (meta.answers ?? {}) as Record<string, string[]>,
     joined: (meta.joined ?? []) as string[],
     consent: meta.consent !== false,
+    preferences: normalizePreferences(meta.preferences),
     userThreads,
     userReplies,
     conversations,
@@ -120,7 +123,7 @@ export async function loadUser(sid: string): Promise<UserState> {
 }
 
 /** Met à jour un champ de la fiche de l'utilisateur et prolonge son TTL. */
-async function setMeta(sid: string, field: "profile" | "answers" | "joined" | "consent", value: unknown) {
+async function setMeta(sid: string, field: "profile" | "answers" | "joined" | "consent" | "preferences", value: unknown) {
   await ensureUser(sid);
   const { PK, SK } = keys.userMeta(sid);
   await updateItem(PK, SK, { [field]: value, ttl: ttl() });
@@ -130,6 +133,7 @@ export const saveProfile = (sid: string, profile: UserProfile) => setMeta(sid, "
 export const saveAnswers = (sid: string, answers: Record<string, string[]>) => setMeta(sid, "answers", answers);
 export const saveJoined = (sid: string, joined: string[]) => setMeta(sid, "joined", joined);
 export const saveConsent = (sid: string, consent: boolean) => setMeta(sid, "consent", consent);
+export const savePreferences = (sid: string, preferences: UserPreferences) => setMeta(sid, "preferences", preferences);
 
 export async function createThread(
   sid: string,
@@ -204,6 +208,7 @@ export async function exportUser(sid: string) {
     reponsesAuQuestionnaire: state.answers,
     cerclesRejoints: state.joined,
     consentement: state.consent,
+    preferences: state.preferences,
     messagesPublies: state.userThreads.map((t) => ({
       cercle: t.circleId,
       type: t.kind,

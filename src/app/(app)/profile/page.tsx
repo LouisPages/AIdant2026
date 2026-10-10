@@ -28,7 +28,7 @@ const traits: { label: string; parts: string[] }[] = [
 ];
 
 export default function Profile() {
-  const { catalog, profile, updateProfile, answers, joined, showToast } = useAppState();
+  const { catalog, profile, updateProfile, answers, joined, preferences, updatePreferences, showToast } = useAppState();
   const { circles: allCircles, questions } = catalog;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile);
@@ -102,6 +102,43 @@ export default function Profile() {
               <Lock size={16} strokeWidth={1.5} className="mt-0.5 shrink-0 text-navy" />
               Ces informations restent privées. Elles servent seulement à vous suggérer des cercles et des solutions.
             </p>
+          </Card>
+        </section>
+
+        <section>
+          <h2 className="mb-1">Préférences</h2>
+          <p className="mb-3 text-small text-ink-2">Choisissez ce que vous acceptez de recevoir. Vous pouvez changer d'avis à tout moment.</p>
+          <Card className="space-y-3">
+            <Switch
+              checked={preferences.contactRequests}
+              onChange={(v) => {
+                updatePreferences({ contactRequests: v });
+                showToast(v ? "Les demandes de discussion sont activées" : "Vous ne recevrez plus de demandes de discussion");
+              }}
+              label="Demandes de discussion"
+              description="Autoriser les autres aidants à vous proposer d'échanger en privé. Désactivé, les demandes reçues sont masquées."
+            />
+            <div className="h-px bg-line" />
+            <Switch
+              checked={preferences.peopleSuggestions}
+              onChange={(v) => updatePreferences({ peopleSuggestions: v })}
+              label="Aidants à découvrir"
+              description="Voir, dans Solutions, des aidants proches de votre situation."
+            />
+            <div className="h-px bg-line" />
+            <Switch
+              checked={preferences.aiSuggestions}
+              onChange={(v) => updatePreferences({ aiSuggestions: v })}
+              label="Suggestions de KatIA"
+              description="Voir, dans Solutions, des pistes proposées d'après votre profil."
+            />
+            <div className="h-px bg-line" />
+            <Switch
+              checked={preferences.onlyMyCircles}
+              onChange={(v) => updatePreferences({ onlyMyCircles: v })}
+              label="Fil limité à mes cercles"
+              description="Ne voir dans Cercles que les échanges des cercles que vous avez rejoints."
+            />
           </Card>
         </section>
 

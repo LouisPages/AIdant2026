@@ -1,0 +1,13 @@
+{
+    "relation": ["conjoint"],
+    "situation": ["age"],
+    "situation_detail": ["Maladie d'Alzheimer"],
+    "depuis": ["1-3"],
+    "rythme": ["continu"],
+    "cohabitation": ["avec"],
+    "entourage": ["seul"],
+    "pro": ["retraite"],
+    "poids": ["fatigue", "sommeil", "culpabilite", "peur"],
+    "recherche": ["ecoute", "repit", "temoignages"]
+  }
+  

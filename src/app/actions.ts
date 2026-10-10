@@ -5,7 +5,12 @@
  * L'identité vient uniquement du cookie de session (jamais d'un paramètre envoyé par le navigateur).
  */
 import { loadCatalog } from "@/lib/db/catalog";
-import { saveModerationDecision } from "@/lib/db/moderation";
+import { getItem, queryPartition } from "@/lib/db/client";
+import { keys } from "@/lib/db/keys";
+import { createModerationCase, saveModerationDecision } from "@/lib/db/moderation";
+import { contestCase, signalCase } from "@/lib/moderation/cases";
+import { moderate } from "@/lib/moderation/moderate";
+import type { ModerationContext, ModerationOutcome } from "@/lib/moderation/types";
 import {
   createMessage,
   createReply,
@@ -18,12 +23,22 @@ import {
   saveAnswers,
   saveConsent,
   saveJoined,
+  savePreferences,
   saveProfile,
   setConversationStatus,
 } from "@/lib/db/user";
 import { getSessionId } from "@/lib/session";
 import type { Answers } from "@/lib/questionnaire";
-import type { ConversationStatus, Reply, Thread, ThreadKind, UserProfile, UserState } from "@/lib/types";
+import { PREFERENCE_KEYS } from "@/lib/preferences";
+import type {
+  ConversationStatus,
+  Reply,
+  Thread,
+  ThreadKind,
+  UserPreferences,
+  UserProfile,
+  UserState,
+} from "@/lib/types";
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const AVATARS = ["leaf", "sun", "feather", "moon", "waves", "mountain", "flower", "sprout"];
@@ -52,6 +67,51 @@ function cleanAnswers(value: unknown): Answers {
     out[key] = list.map((v) => text(v, 120, "réponse"));
   }
   return out;
+}
+
+/**
+ * Modération côté serveur : l'interface vérifie avant d'envoyer, mais seul ce contrôle fait foi.
+ * Le verdict est en cache : un message déjà vérifié par l'interface ne déclenche pas un second appel.
+ */
+async function enforceModeration(text: string, context?: ModerationContext): Promise<ModerationOutcome> {
+  const outcome = await moderate(text, context);
+  if (outcome.verdict.decision === "block") fail("Message refusé par la modération");
+  return outcome;
+}
+
+/** Contexte d'une réponse : le fil auquel on répond, lu en base (jamais fourni par le navigateur). */
+async function replyContext(sid: string, threadId: string): Promise<{ context: ModerationContext; circleId: string }> {
+  const { threads } = await loadCatalog();
+  const shared = threads.find((t) => t.id === threadId);
+  const own = shared ? undefined : await getItem(keys.userThread(sid, threadId).PK, keys.userThread(sid, threadId).SK);
+  const parent = shared ?? (own as { title?: string; body?: string; circleId?: string } | undefined);
+  const text = parent ? `${parent.title ?? ""}. ${parent.body ?? ""}`.trim() : "";
+  return { context: text ? { parent: text } : {}, circleId: String(parent?.circleId ?? "") };
+}
+
+/** Contexte d'un message privé : les deux derniers échanges, lus en base. */
+async function messageContext(sid: string, member: string): Promise<ModerationContext> {
+  const items = await queryPartition(keys.user(sid), `MSG#${member}#`);
+  const previous = items
+    .sort((a, b) => String(a.SK).localeCompare(String(b.SK)))
+    .slice(-2)
+    .map((m) => `${m.from === "me" ? "Moi" : "L'autre"} : ${String(m.text ?? "")}`);
+  return previous.length ? { previous } : {};
+}
+
+/** Un message de détresse est publié ; l'équipe humaine est alertée, sans que l'auteur voie autre chose que l'aide proposée. */
+async function flagDistress(sid: string, outcome: ModerationOutcome, circleId: string, message: string) {
+  if (!outcome.signal) return;
+  try {
+    const meta = await getItem(keys.userMeta(sid).PK, keys.userMeta(sid).SK);
+    const profile = meta?.profile as UserProfile | undefined;
+    await createModerationCase(sid, signalCase({ circleId, message, signal: outcome.signal }), {
+      pseudo: profile?.pseudo || "Aidant anonyme",
+      avatar: profile?.avatar,
+    });
+  } catch {
+    // Le message est déjà publié : un échec d'alerte ne doit pas le faire échouer.
+  }
 }
 
 async function memberId(value: unknown) {
@@ -88,6 +148,17 @@ export async function saveConsentAction(consent: boolean): Promise<void> {
   await saveConsent(await getSessionId(), consent === true);
 }
 
+export async function savePreferencesAction(preferences: UserPreferences): Promise<void> {
+  const sid = await getSessionId();
+  if (typeof preferences !== "object" || preferences === null) fail("Préférences invalides");
+  const clean = {} as UserPreferences;
+  for (const key of PREFERENCE_KEYS) {
+    if (typeof preferences[key] !== "boolean") fail("Préférences invalides");
+    clean[key] = preferences[key];
+  }
+  await savePreferences(sid, clean);
+}
+
 export async function publishThreadAction(input: {
   id: string;
   circleId: string;
@@ -100,24 +171,60 @@ export async function publishThreadAction(input: {
   const circleId = id(input.circleId, "cercle");
   if (!circles.some((c) => c.id === circleId)) fail("Cercle inconnu");
   if (!KINDS.includes(input.kind)) fail("Type de message invalide");
-  return createThread(sid, {
-    id: id(input.id),
-    circleId,
-    kind: input.kind,
-    title: text(input.title, 120, "titre", 1),
-    body: text(input.body, 4000, "message", 1),
-  });
+  const title = text(input.title, 120, "titre", 1);
+  const body = text(input.body, 4000, "message", 1);
+  const outcome = await enforceModeration(`${title} ${body}`);
+  const thread = await createThread(sid, { id: id(input.id), circleId, kind: input.kind, title, body });
+  // Le titre par défaut reprend le début du message : on ne le répète pas dans le cas transmis à l'équipe.
+  const repeated = body.toLowerCase().includes(title.replace(/\s*\?$/, "").toLowerCase());
+  await flagDistress(sid, outcome, circleId, repeated ? body : `${title}. ${body}`);
+  return thread;
 }
 
 export async function publishReplyAction(input: { id: string; threadId: string; body: string }): Promise<Reply> {
   const sid = await getSessionId();
-  return createReply(sid, {
-    id: id(input.id),
-    threadId: id(input.threadId, "fil"),
-    body: text(input.body, 4000, "réponse", 1),
-  });
+  const threadId = id(input.threadId, "fil");
+  const body = text(input.body, 4000, "réponse", 1);
+  const { context, circleId } = await replyContext(sid, threadId);
+  const outcome = await enforceModeration(body, context);
+  const reply = await createReply(sid, { id: id(input.id), threadId, body });
+  await flagDistress(sid, outcome, circleId, body);
+  return reply;
 }
 
+/**
+ * Droit de contestation : l'auteur d'un message refusé demande une relecture humaine. Seuls les textes réellement
+ * refusés sont acceptés ; le contexte (fil, conversation) est relu en base pour retrouver le même verdict.
+ */
+export async function contestModerationAction(input: {
+  text: string;
+  circleId?: string;
+  threadId?: string;
+  member?: string;
+}): Promise<void> {
+  const sid = await getSessionId();
+  const message = text(input.text, 4000, "message", 1);
+  const context = input.threadId
+    ? (await replyContext(sid, id(input.threadId, "fil"))).context
+    : input.member
+      ? await messageContext(sid, await memberId(input.member))
+      : undefined;
+  const outcome = await moderate(message, context);
+  if (outcome.verdict.decision !== "block") fail("Ce message n'a pas été refusé");
+  const meta = await getItem(keys.userMeta(sid).PK, keys.userMeta(sid).SK);
+  const profile = meta?.profile as UserProfile | undefined;
+  await createModerationCase(
+    sid,
+    contestCase({
+      circleId: input.circleId ? id(input.circleId, "cercle") : "",
+      message,
+      category: outcome.verdict.category,
+      severity: outcome.verdict.severity,
+      rationale: outcome.rationale,
+    }),
+    { pseudo: profile?.pseudo || "Aidant anonyme", avatar: profile?.avatar },
+  );
+}
 export async function setConversationStatusAction(member: string, status: ConversationStatus): Promise<void> {
   const sid = await getSessionId();
   if (!STATUSES.includes(status)) fail("Statut invalide");
@@ -131,7 +238,12 @@ export async function requestContactAction(member: string): Promise<void> {
 
 export async function sendMessageAction(member: string, body: string, messageId: string) {
   const sid = await getSessionId();
-  return createMessage(sid, await memberId(member), text(body, 4000, "message", 1), id(messageId));
+  const to = await memberId(member);
+  const message = text(body, 4000, "message", 1);
+  const outcome = await enforceModeration(message, await messageContext(sid, to));
+  const saved = await createMessage(sid, to, message, id(messageId));
+  await flagDistress(sid, outcome, "", message);
+  return saved;
 }
 
 export async function reportAction(targetId: string, reason: string): Promise<void> {

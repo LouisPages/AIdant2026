@@ -51,7 +51,7 @@ function FilterChip({
 const FEED_PAGE = 15;
 
 export default function CirclesHome() {
-  const { catalog, joined, setJoined, answers, userThreads, userReplies, showToast } = useAppState();
+  const { catalog, joined, setJoined, answers, userThreads, userReplies, preferences, showToast } = useAppState();
   const { circles: allCircles, familyLabels } = catalog;
   const circles = useMemo(() => allCircles.filter((c) => !c.detail), [allCircles]);
   const detailCircles = useMemo(() => allCircles.filter((c) => c.detail), [allCircles]);
@@ -89,8 +89,10 @@ export default function CirclesHome() {
 
   const feed = useMemo(() => {
     const all = [...userThreads, ...(ranked ?? [])];
-    return selected.length ? all.filter((t) => selected.includes(t.circleId)) : all;
-  }, [userThreads, ranked, selected]);
+    // « Fil limité à mes cercles » (préférence) : seuls les échanges des cercles rejoints restent visibles.
+    const scoped = preferences.onlyMyCircles ? all.filter((t) => joined.includes(t.circleId)) : all;
+    return selected.length ? scoped.filter((t) => selected.includes(t.circleId)) : scoped;
+  }, [userThreads, ranked, selected, preferences.onlyMyCircles, joined]);
 
   // Le fil s'affiche par pages ; le compteur repart de zéro quand on change de filtre.
   const feedKey = selected.join(",");

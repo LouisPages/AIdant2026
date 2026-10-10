@@ -3,6 +3,7 @@ import { DM_Sans } from "next/font/google";
 import { unstable_rethrow } from "next/navigation";
 import "./globals.css";
 import { AppStateProvider } from "@/context/app-state";
+import { SupportCard } from "@/components/support-card";
 import { Toast } from "@/components/ui/misc";
 import { loadCatalog } from "@/lib/db/catalog";
 import { explainAwsError } from "@/lib/db/client";
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {"data" in result ? (
           <AppStateProvider initial={result.data}>
             <div className="mobile-frame">{children}</div>
+            <SupportCard />
             <Toast />
           </AppStateProvider>
         ) : (

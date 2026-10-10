@@ -9,6 +9,8 @@ import { allCircles, charter, familyLabels } from "../seed/circles";
 import { conversations } from "../seed/conversations";
 import { demoProfile, demoJoined, emptyProfile } from "../seed/demo";
 import { members, suggestedPseudos } from "../seed/members";
+import { deriveThreadTags, memberTags } from "../seed/tags";
+import { isKnownTag } from "../src/lib/tags";
 import { helpResources, moderationCases } from "../seed/moderation";
 import { demoAnswers, questions, relatedTopics, seedTopics } from "../seed/questionnaire";
 import { resources } from "../seed/resources";
@@ -86,13 +88,20 @@ const add = (k: ReturnType<(typeof keys)["member"]>, data: Record<string, unknow
 allCircles.forEach((c, i) => add(keys.circle(c.id, i), { ...c, order: i }));
 
 // Membres fictifs
-Object.values(members).forEach((mb) => add(keys.member(mb.id), { ...mb }));
+Object.values(members).forEach((mb) => add(keys.member(mb.id), { ...mb, tags: memberTags[mb.id] ?? [] }));
 
 // Vérification des références (cercles, auteurs, ressources) avant toute écriture.
 {
   const circleIds = new Set(allCircles.map((c) => c.id));
   const resourceIds = new Set(Object.keys(resources));
   const threadIds = new Set<string>();
+  for (const [id, list] of [
+    ...allCircles.map((c) => [`cercle ${c.id}`, c.tags ?? []] as const),
+    ...Object.entries(memberTags).map(([id, l]) => [`membre ${id}`, l] as const),
+  ]) {
+    for (const tag of list) if (!isKnownTag(tag)) throw new Error(`Tag inconnu « ${tag} » (${id})`);
+  }
+  for (const id of Object.keys(memberTags)) if (!members[id]) throw new Error(`Tags pour un membre inconnu : ${id}`);
   for (const t of threads) {
     if (threadIds.has(t.id)) throw new Error(`Fil en double : ${t.id}`);
     threadIds.add(t.id);
@@ -114,7 +123,9 @@ const datedThreads = threads
 datedThreads.forEach(({ t, createdAt }, order) => {
   const { replies, time: _time, ...rest } = t;
   void _time;
-  add(keys.thread(t.id, createdAt), { ...rest, createdAt, order });
+  const circle = allCircles.find((c) => c.id === t.circleId)!;
+  const tags = deriveThreadTags(t, circle, t.resourceId ? articleTopics[t.resourceId] : []);
+  add(keys.thread(t.id, createdAt), { ...rest, tags, createdAt, order });
   const base = new Date(createdAt).getTime();
   replies.forEach((r, i) => {
     const { time: rt, ...r2 } = r;
