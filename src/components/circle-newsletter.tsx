@@ -105,7 +105,7 @@ export function CircleNewsletter({
       <div className="flex items-start justify-between gap-2 pr-8">
         <div className="min-w-0">
           {circle && <CircleTag circle={circle} className="mb-2" />}
-          <p className="text-h3 font-semibold text-ink">Newsletter positive du jour</p>
+          <p className="text-h3 font-semibold text-ink">Newsletter positive de la semaine</p>
         </div>
         {hosts.length > 0 && (
           <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
