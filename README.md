@@ -1,4 +1,4 @@
-﻿# entr'aidant
+﻿# Entr'aidant
 
 Un espace calme pour les personnes qui accompagnent un proche. On y arrive sous un pseudonyme, on trouve des aidants dans une situation proche de la sienne, et on échange à son rythme. Rien n'est obligatoire. L'application propose, la personne décide.
 
@@ -161,6 +161,32 @@ Puis ouvrir http://localhost:3000. Le parcours commence par l'écran d'accueil, 
 
 La modération est invisible tant que tout va bien : un message acceptable est publié sans écran intermédiaire. Un message refusé reste dans le champ, avec une explication bienveillante et la possibilité de demander une relecture humaine. Les cas à examiner (détresse repérée, relecture demandée) arrivent sur `/moderation`.
 
+### Démo publique un jour
+
+Une instance EC2 `t3.small` (Amazon Linux 2023, `us-east-1`, VPC par défaut, IP publique) sert le même serveur que `npm start`. La table `aidants` existe déjà sur le compte. Amplify Hosting s'arrête à Next.js 15 ; cette application est en 16, avec la session créée par `src/proxy.ts`.
+
+1. Dans IAM, créer une politique avec [`deploy/demo-compute-policy.json`](deploy/demo-compute-policy.json). Créer un rôle pour le service EC2 : la relation d'approbation est [`deploy/demo-trust-policy.json`](deploy/demo-trust-policy.json). Y attacher la politique. Le profil d'instance porte le même nom que le rôle.
+2. Lancer l'instance avec ce profil. Groupe de sécurité : entrée TCP **3000**. Laisser les clés d'accès vides : le rôle tient toute la journée, les jetons Workshop Studio expirent, et une variable `AWS_ACCESS_KEY_ID` vide ou périmée masque le rôle.
+3. La branche distante doit contenir `deploy/`. Sur l'instance, en `ec2-user` :
+
+```bash
+curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash -
+sudo dnf install -y nodejs git
+git clone https://github.com/LouisPages/AIdant2026.git
+cd AIdant2026
+npm ci
+npm run build
+sudo cp deploy/entraidant.service /etc/systemd/system/entraidant.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now entraidant
+```
+
+Ouvrir `http://<ip-publique>:3000`. Le cookie `sid` fonctionne en HTTP. L'identifiant du garde-fou peut rester absent : l'application le relit dans DynamoDB. Pour le fixer, l'écrire dans `/etc/entraidant.env` (`BEDROCK_GUARDRAIL_ID`, `BEDROCK_GUARDRAIL_VERSION`) puis `sudo systemctl restart entraidant`.
+
+Si le compte refuse la création du rôle, poser `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` et `AWS_SESSION_TOKEN` dans `/etc/entraidant.env`, puis redémarrer le service à chaque renouvellement.
+
+Le soir, arrêter et terminer l'instance. La table et le garde-fou se retirent comme dans « Fin du game day ».
+
 ### Structure
 
 ```
@@ -249,6 +275,4 @@ Les juges ajoutent `bedrock:InvokeModel` sur les profils d'inférence et modèle
 
 #### Fin du game day
 
-Supprimer les clés d'accès et les ressources créées : `npm run ai:guardrail -- --delete`, puis la table `aidants`. Ne jamais versionner `.env.local`.
-
-Next.js peut être déployé sur AWS Amplify Hosting.
+Supprimer les clés d'accès et les ressources créées : `npm run ai:guardrail -- --delete`, puis la table `aidants`. Ne jamais versionner `.env.local`. Terminer aussi l'instance de la démo publique, si elle tourne encore.

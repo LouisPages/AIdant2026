@@ -3,9 +3,9 @@
  * Des arguments limitent la préparation à ces sujets
  * (`det:maladie-de-parkinson`, `circle:c-demarches`, `sit:age`, `aidance`).
  */
-import { circles } from "../seed/circles.ts";
-import { situationDetails } from "../seed/questionnaire.ts";
-import { refreshTopic } from "../src/lib/news/deliver.ts";
+import { circles } from "../seed/circles";
+import { situationDetails } from "../seed/questionnaire";
+import { refreshTopic } from "../src/lib/news/deliver";
 import {
   AIDANCE_TOPIC,
   SITUATION_IDS,
@@ -13,7 +13,7 @@ import {
   detailTopic,
   situationTopic,
   type NewsTopic,
-} from "../src/lib/news/topic.ts";
+} from "../src/lib/news/topic";
 
 function allTopics(): NewsTopic[] {
   const seen = new Set<string>();
