@@ -14,6 +14,7 @@ import type {
 import {
   batchDelete,
   batchPut,
+  deleteItem,
   getItem,
   putItem,
   queryPartition,
@@ -99,6 +100,9 @@ function buildState(items: Item[]): UserState {
   for (const c of Object.values(conversations)) c.messages.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   const reported = items.filter((i) => i.SK.startsWith("REPORT#")).map((i) => String(i.SK).slice("REPORT#".length));
+  const hiddenIds = Array.isArray(meta.hiddenIds)
+    ? (meta.hiddenIds as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
 
   return {
     profile: meta.profile as UserProfile,
@@ -110,6 +114,7 @@ function buildState(items: Item[]): UserState {
     userReplies,
     conversations,
     reported,
+    hiddenIds,
   };
 }
 
@@ -123,7 +128,11 @@ export async function loadUser(sid: string): Promise<UserState> {
 }
 
 /** Met à jour un champ de la fiche de l'utilisateur et prolonge son TTL. */
-async function setMeta(sid: string, field: "profile" | "answers" | "joined" | "consent" | "preferences", value: unknown) {
+async function setMeta(
+  sid: string,
+  field: "profile" | "answers" | "joined" | "consent" | "preferences" | "hiddenIds",
+  value: unknown,
+) {
   await ensureUser(sid);
   const { PK, SK } = keys.userMeta(sid);
   await updateItem(PK, SK, { [field]: value, ttl: ttl() });
@@ -182,6 +191,39 @@ export async function createMessage(sid: string, memberId: string, text: string,
   const msg: ChatMessage = { id: id ?? randomUUID(), from: "me", text, createdAt: new Date().toISOString() };
   await putItem({ ...keys.userMsg(sid, memberId, msg.id, msg.createdAt), ...msg, memberId, ttl: ttl() } as Item);
   return msg;
+}
+
+/** Suppression d'un message de conversation (outil de démonstration). */
+export async function deleteMessage(sid: string, memberId: string, messageId: string) {
+  const items = await queryPartition(keys.user(sid), `MSG#${memberId}#`);
+  const target = items.find((i) => i.id === messageId);
+  if (target) await deleteItem(target.PK, target.SK);
+}
+
+/**
+ * Démo : masque un fil ou une réponse, et efface ceux publiés par la session.
+ * Le contenu partagé (seed) n'est pas détruit, seulement masqué pour cet utilisateur.
+ */
+export async function hideContent(sid: string, contentId: string, threadId?: string) {
+  await ensureUser(sid);
+  const { PK, SK } = keys.userMeta(sid);
+  const meta = await getItem(PK, SK);
+  const hidden = Array.isArray(meta?.hiddenIds) ? (meta.hiddenIds as string[]) : [];
+  if (!hidden.includes(contentId)) {
+    await updateItem(PK, SK, { hiddenIds: [...hidden, contentId], ttl: ttl() });
+  }
+
+  const own = keys.userThread(sid, contentId);
+  const thread = await getItem(own.PK, own.SK);
+  if (thread) {
+    const replies = await queryPartition(keys.user(sid), `REPLY#${contentId}#`);
+    await batchDelete([{ PK: own.PK, SK: own.SK }, ...replies.map((r) => ({ PK: r.PK, SK: r.SK }))]);
+    return;
+  }
+
+  const prefix = threadId ? `REPLY#${threadId}#` : "REPLY#";
+  const reply = (await queryPartition(keys.user(sid), prefix)).find((i) => i.id === contentId);
+  if (reply) await deleteItem(reply.PK, reply.SK);
 }
 
 export async function createReport(sid: string, targetId: string, reason: string) {

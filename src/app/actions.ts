@@ -16,6 +16,8 @@ import {
   createReply,
   createReport,
   createThread,
+  deleteMessage,
+  hideContent,
   deleteUserData,
   exportUser,
   loadUser,
@@ -244,6 +246,18 @@ export async function sendMessageAction(member: string, body: string, messageId:
   const saved = await createMessage(sid, to, message, id(messageId));
   await flagDistress(sid, outcome, "", message);
   return saved;
+}
+
+/** Démo uniquement : supprime un message d'une conversation de la session courante. */
+export async function deleteMessageAction(member: string, messageId: string): Promise<void> {
+  const sid = await getSessionId();
+  await deleteMessage(sid, await memberId(member), id(messageId, "message"));
+}
+
+/** Démo uniquement : masque un fil ou une réponse, et efface ceux de la session. */
+export async function deleteContentAction(contentId: string, threadId?: string): Promise<void> {
+  const sid = await getSessionId();
+  await hideContent(sid, id(contentId, "contenu"), threadId ? id(threadId, "fil") : undefined);
 }
 
 export async function reportAction(targetId: string, reason: string): Promise<void> {

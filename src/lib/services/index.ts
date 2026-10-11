@@ -7,8 +7,11 @@
  * (voir `lib/ai/`). Si Amazon Bedrock est indisponible, elle repose sur les deux premiers niveaux seulement.
  * Un fichier « use server » ne peut exporter que des fonctions asynchrones : la logique est dans `lib/ai`.
  */
-import { loadHelpResources } from "@/lib/db/catalog";
+import { loadCatalog, loadHelpResources } from "@/lib/db/catalog";
 import { rankCircles, rankSolutions, rankThreads, similarThreads, type SolutionsResult } from "@/lib/ai/recommend";
+import { deliverLetter } from "@/lib/news/deliver";
+import { resolveNewsTopic } from "@/lib/news/topic";
+import type { CircleLetter } from "@/lib/news/types";
 import { localCheck } from "@/lib/moderation/local";
 import { moderate } from "@/lib/moderation/moderate";
 import type { ModerationContext, ModerationVerdict } from "@/lib/moderation/types";
@@ -50,6 +53,20 @@ export async function detectDistress(text: string): Promise<{ distress: boolean 
 /** Suggère des fils déjà traités avant de publier une question. */
 export async function findSimilarThreads(text: string, circleId: string): Promise<Thread[]> {
   return similarThreads(text, circleId);
+}
+
+/**
+ * Lettre épinglée du filtre en cours. La même pour tous les aidants d'un sujet.
+ * `null` si aucune source fiable n'a d'article : le fil s'affiche quand même.
+ */
+export async function getCircleLetter(selected: string[], answers: Answers): Promise<CircleLetter | null> {
+  try {
+    const { circles } = await loadCatalog();
+    return await deliverLetter(resolveNewsTopic(selected, answers, circles));
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") console.warn(`[lettre] ${(error as Error).message}`);
+    return null;
+  }
 }
 
 /** Messages les plus pertinents, tous cercles confondus. Les cercles du membre sont favorisés. */

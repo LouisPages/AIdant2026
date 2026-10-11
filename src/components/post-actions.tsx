@@ -3,6 +3,7 @@
 import { Flag, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DemoDeleteButton } from "@/components/demo-delete";
 import { Chip } from "@/components/ui/badge";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,9 @@ import { useAppState, useGetMember } from "@/context/app-state";
 const reasons = ["Ton blessant", "Conseil médical", "Publicité", "Autre"];
 
 /** Actions d'un message : écrire en privé (UC7) et signaler (UC9). */
-export function PostActions({ id, authorId }: { id: string; authorId: string }) {
+export function PostActions({ id, authorId, threadId }: { id: string; authorId: string; threadId?: string }) {
   const router = useRouter();
-  const { statuses, requestContact, reported, report, showToast } = useAppState();
+  const { statuses, requestContact, reported, report, deletePost, showToast } = useAppState();
   const getMember = useGetMember();
   const author = getMember(authorId);
   const [contactOpen, setContactOpen] = useState(false);
@@ -54,6 +55,14 @@ export function PostActions({ id, authorId }: { id: string; authorId: string }) 
             {isReported ? "Signalé" : "Signaler"}
           </button>
         )}
+        <span className={isMe ? "ml-auto" : undefined}>
+          <DemoDeleteButton
+            onClick={() => {
+              deletePost(id, threadId);
+              showToast("Message supprimé");
+            }}
+          />
+        </span>
       </div>
 
       <BottomSheet open={contactOpen} onClose={() => setContactOpen(false)} title={`Échanger avec ${author.pseudo} ?`}>

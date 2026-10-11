@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
+  deleteContentAction,
+  deleteMessageAction,
   deleteMyDataAction,
   publishReplyAction,
   publishThreadAction,
@@ -59,6 +61,10 @@ type AppState = {
   setStatus: (memberId: string, status: ConversationStatus) => void;
   requestContact: (memberId: string) => void;
   sendChat: (memberId: string, text: string) => void;
+  /** Démo : supprime un message d'une conversation. */
+  deleteChat: (memberId: string, messageId: string) => void;
+  /** Démo : masque un fil ou une réponse (les siens et ceux des autres). */
+  deletePost: (contentId: string, threadId?: string) => void;
   reported: string[];
   report: (id: string, reason: string) => void;
   /** Préférences de l'aidant : appliquées partout (demandes de discussion, Solutions, fil des Cercles). */
@@ -91,6 +97,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
   const [userReplies, setUserReplies] = useState<Record<string, Reply[]>>(user.userReplies);
   const [conversations, setConversations] = useState<Record<string, Conversation>>(user.conversations);
   const [reported, setReported] = useState<string[]>(user.reported);
+  const [hiddenIds, setHiddenIds] = useState<string[]>(user.hiddenIds ?? []);
   const [consent, setConsentState] = useState(user.consent);
   const [preferences, setPreferences] = useState<UserPreferences>(user.preferences);
   const [toast, setToast] = useState<string | null>(null);
@@ -135,6 +142,18 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
   const circleById = useMemo(() => new Map(catalog.circles.map((c) => [c.id, c])), [catalog.circles]);
 
   const value = useMemo<AppState>(() => {
+    const hidden = new Set(hiddenIds);
+    const visibleUserThreads = userThreads.filter((t) => !hidden.has(t.id));
+    const visibleUserReplies = Object.fromEntries(
+      Object.entries(userReplies).map(([tid, list]) => [tid, list.filter((r) => !hidden.has(r.id))]),
+    );
+    const visibleCatalog: Catalog = {
+      ...catalog,
+      threads: catalog.threads
+        .filter((t) => !hidden.has(t.id))
+        .map((t) => (hidden.size ? { ...t, replies: t.replies.filter((r) => !hidden.has(r.id)) } : t)),
+    };
+
     // Sans demandes de discussion, celles déjà reçues sont masquées (elles reviennent si l'aidant change d'avis).
     const statuses = Object.fromEntries(
       Object.values(conversations)
@@ -148,9 +167,12 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
     };
 
     return {
-      catalog,
+      catalog: visibleCatalog,
       getCircle: (id) => circleById.get(id),
-      getThread: (id) => userThreads.find((t) => t.id === id) ?? catalog.threads.find((t) => t.id === id),
+      getThread: (id) =>
+        hidden.has(id)
+          ? undefined
+          : (visibleUserThreads.find((t) => t.id === id) ?? visibleCatalog.threads.find((t) => t.id === id)),
 
       answers,
       setPart: (partId, values) => {
@@ -185,7 +207,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         persist(saveJoinedAction(next));
       },
 
-      userThreads,
+      userThreads: visibleUserThreads,
       addThread: (circleId, post) => {
         const id = newId("u");
         const thread: Thread = {
@@ -203,7 +225,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         return id;
       },
 
-      userReplies,
+      userReplies: visibleUserReplies,
       addReply: (threadId, body) => {
         const id = newId("ur");
         const reply: Reply = { id, authorId: "me", body, createdAt: new Date().toISOString() };
@@ -247,6 +269,25 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         });
         persist(sendMessageAction(memberId, text, id));
       },
+      deleteChat: (memberId, messageId) => {
+        setConversations((c) => {
+          const conv = c[memberId];
+          if (!conv) return c;
+          return { ...c, [memberId]: { ...conv, messages: conv.messages.filter((m) => m.id !== messageId) } };
+        });
+        persist(deleteMessageAction(memberId, messageId));
+      },
+      deletePost: (contentId, threadId) => {
+        setHiddenIds((h) => (h.includes(contentId) ? h : [...h, contentId]));
+        setUserThreads((t) => t.filter((x) => x.id !== contentId));
+        setUserReplies((r) => {
+          const next = { ...r };
+          if (threadId) next[threadId] = (next[threadId] ?? []).filter((x) => x.id !== contentId);
+          else delete next[contentId];
+          return next;
+        });
+        persist(deleteContentAction(contentId, threadId));
+      },
 
       reported,
       report: (id, reason) => {
@@ -280,6 +321,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
         setUserReplies(fresh.userReplies);
         setConversations(fresh.conversations);
         setReported(fresh.reported);
+        setHiddenIds(fresh.hiddenIds);
         setConsentState(fresh.consent);
         preferencesRef.current = fresh.preferences;
         setPreferences(fresh.preferences);
@@ -298,6 +340,7 @@ export function AppStateProvider({ initial, children }: { initial: Bootstrap; ch
     userReplies,
     conversations,
     reported,
+    hiddenIds,
     consent,
     preferences,
     toast,

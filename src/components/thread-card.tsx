@@ -3,6 +3,7 @@
 import { MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { CircleTag } from "@/components/circle-card";
+import { DemoDeleteButton } from "@/components/demo-delete";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { TimeText } from "@/components/time-text";
@@ -26,7 +27,7 @@ export function ThreadCard({
   showCircle?: boolean;
 }) {
   const getMember = useGetMember();
-  const { getCircle } = useAppState();
+  const { getCircle, deletePost, showToast } = useAppState();
   const author = getMember(thread.authorId);
   const circle = showCircle ? getCircle(thread.circleId) : undefined;
   const replies = thread.replies;
@@ -46,6 +47,12 @@ export function ThreadCard({
           <TimeText value={thread.createdAt} className="block text-label text-ink-2" />
         </div>
         <Badge tone={thread.kind === "question" ? "sky" : "teal"}>{kindLabel[thread.kind]}</Badge>
+        <DemoDeleteButton
+          onClick={() => {
+            deletePost(thread.id);
+            showToast("Message supprimé");
+          }}
+        />
       </div>
       <h3 className="mt-3">{thread.title}</h3>
       <p className="mt-1 line-clamp-3 text-small text-ink-2">{thread.body}</p>

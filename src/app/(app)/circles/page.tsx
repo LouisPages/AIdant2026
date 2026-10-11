@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { formatMembers } from "@/components/circle-card";
 import { CircleIcon } from "@/components/circle-icon";
+import { CircleNewsletter, circleIdForTopic } from "@/components/circle-newsletter";
 import { ComposerSheet } from "@/components/composer-sheet";
 import { ThreadCard } from "@/components/thread-card";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,11 @@ import { Header } from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/misc";
 import { useAppState } from "@/context/app-state";
+import type { CircleLetter } from "@/lib/news/types";
+import { detailKey } from "@/lib/questionnaire";
 import type { Thread } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { getRelevantThreads } from "@/lib/services";
+import { getCircleLetter, getRelevantThreads } from "@/lib/services";
 import { toneFor } from "@/lib/tones";
 
 const norm = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
@@ -51,12 +54,24 @@ function FilterChip({
 const FEED_PAGE = 15;
 
 export default function CirclesHome() {
-  const { catalog, joined, setJoined, answers, userThreads, userReplies, preferences, showToast } = useAppState();
+  const { catalog, joined, setJoined, answers, userThreads, userReplies, preferences, showToast, getThread } =
+    useAppState();
   const { circles: allCircles, familyLabels } = catalog;
   const circles = useMemo(() => allCircles.filter((c) => !c.detail), [allCircles]);
   const detailCircles = useMemo(() => allCircles.filter((c) => c.detail), [allCircles]);
+  // Cercles du membre en premier, puis les autres.
+  const ordered = useMemo(
+    () => [
+      ...detailCircles.filter((c) => joined.includes(c.id)),
+      ...circles.filter((c) => joined.includes(c.id)),
+      ...circles.filter((c) => !joined.includes(c.id)),
+    ],
+    [joined, circles, detailCircles],
+  );
   const [ranked, setRanked] = useState<Thread[] | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [letter, setLetter] = useState<CircleLetter | null>(null);
+  const [newsletterHidden, setNewsletterHidden] = useState(false);
+  const [selected, setSelected] = useState<string[]>(() => (ordered[0] ? [ordered[0].id] : []));
   const [query, setQuery] = useState("");
   const [composer, setComposer] = useState(false);
 
@@ -68,15 +83,18 @@ export default function CirclesHome() {
     };
   }, [joined, answers]);
 
-  // Cercles du membre en premier, puis les autres.
-  const ordered = useMemo(
-    () => [
-      ...detailCircles.filter((c) => joined.includes(c.id)),
-      ...circles.filter((c) => joined.includes(c.id)),
-      ...circles.filter((c) => !joined.includes(c.id)),
-    ],
-    [joined, circles, detailCircles],
-  );
+  const situationKey = `${answers.situation?.[0] ?? ""}|${answers[detailKey("situation")]?.[0] ?? ""}`;
+  useEffect(() => {
+    if (query.trim()) return;
+    let alive = true;
+    setLetter(null);
+    getCircleLetter(selected, answers).then((value) => {
+      if (alive) setLetter(value);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [selected, answers, query, situationKey]);
 
   const q = norm(query.trim());
   const searching = q.length > 0;
@@ -88,17 +106,22 @@ export default function CirclesHome() {
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const feed = useMemo(() => {
-    const all = [...userThreads, ...(ranked ?? [])];
+    const all = [...userThreads, ...(ranked ?? [])].filter((t) => getThread(t.id));
     // « Fil limité à mes cercles » (préférence) : seuls les échanges des cercles rejoints restent visibles.
     const scoped = preferences.onlyMyCircles ? all.filter((t) => joined.includes(t.circleId)) : all;
-    return selected.length ? scoped.filter((t) => selected.includes(t.circleId)) : scoped;
-  }, [userThreads, ranked, selected, preferences.onlyMyCircles, joined]);
+    const list = selected.length ? scoped.filter((t) => selected.includes(t.circleId)) : scoped;
+    // Le plus récent en tête : on retrouve le dernier échange sans descendre toute la liste.
+    return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [userThreads, ranked, selected, preferences.onlyMyCircles, joined, getThread]);
 
   // Le fil s'affiche par pages ; le compteur repart de zéro quand on change de filtre.
   const feedKey = selected.join(",");
   const [limit, setLimit] = useState({ key: "", n: FEED_PAGE });
   const visible = limit.key === feedKey ? limit.n : FEED_PAGE;
 
+  const newsletterCircle = letter
+    ? allCircles.find((c) => c.id === circleIdForTopic(letter.topicId))
+    : undefined;
   const single = selected.length === 1 ? allCircles.find((c) => c.id === selected[0]) : undefined;
   const singleJoined = single ? joined.includes(single.id) : false;
 
@@ -141,6 +164,23 @@ export default function CirclesHome() {
       </div>
 
       <main className="mt-3 space-y-4 px-5">
+        {!searching && letter && !newsletterHidden && (
+          <CircleNewsletter
+            letter={letter}
+            circle={newsletterCircle}
+            onHide={() => setNewsletterHidden(true)}
+          />
+        )}
+        {!searching && letter && newsletterHidden && (
+          <button
+            type="button"
+            onClick={() => setNewsletterHidden(false)}
+            className="pressable flex min-h-11 items-center text-small font-semibold text-teal-dark"
+          >
+            Afficher la newsletter
+          </button>
+        )}
+
         {searching && (
           <section>
             <h2 className="mb-3">Cercles trouvés</h2>
@@ -229,7 +269,7 @@ export default function CirclesHome() {
           <section>
             <h2 className="mb-3">
               {selected.length === 0
-                ? "Les plus pertinents pour vous"
+                ? "Les plus récents pour vous"
                 : selected.length === 1
                   ? "Les échanges"
                   : "Dans vos cercles choisis"}

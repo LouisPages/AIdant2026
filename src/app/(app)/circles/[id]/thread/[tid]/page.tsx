@@ -3,7 +3,7 @@
 import { Send, Sprout } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PostActions } from "@/components/post-actions";
 import { ResourceCard } from "@/components/resource-card";
 import { kindLabel } from "@/components/thread-card";
@@ -22,6 +22,7 @@ export default function ThreadPage() {
   const { getCircle, getThread, userReplies, addReply } = useAppState();
   const getMember = useGetMember();
   const [reply, setReply] = useState("");
+  const noticeRef = useRef<HTMLDivElement>(null);
 
   const thread = getThread(tid);
   const circle = getCircle(id);
@@ -31,6 +32,15 @@ export default function ThreadPage() {
     [id, tid, thread],
   );
   const { checking, refusal, contested, check, clear, contest } = useModeration(scope);
+  const replies = useMemo(() => {
+    if (!thread) return [];
+    return [...thread.replies, ...(userReplies[thread.id] ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [thread, userReplies]);
+
+  useEffect(() => {
+    if (!refusal) return;
+    noticeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [refusal]);
 
   if (!thread || !circle) {
     return (
@@ -42,7 +52,6 @@ export default function ThreadPage() {
   }
 
   const author = getMember(thread.authorId);
-  const replies = [...thread.replies, ...(userReplies[thread.id] ?? [])];
 
   const send = async () => {
     const text = reply.trim();
@@ -54,7 +63,14 @@ export default function ThreadPage() {
 
   return (
     <div className="pb-4">
-      <Header title={thread.title} back={`/circles/${circle.id}`} />
+      <div ref={noticeRef}>
+        <Header title={thread.title} back={`/circles/${circle.id}`} />
+        {refusal && (
+          <div className="px-5 pb-4">
+            <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
+          </div>
+        )}
+      </div>
       <main className="space-y-4 px-5">
         <Link href={`/circles/${circle.id}`} className="-mt-3 block text-small font-medium text-teal-dark">
           {circle.name}
@@ -93,7 +109,7 @@ export default function ThreadPage() {
                       <TimeText value={r.createdAt} className="text-label text-ink-2" />
                     </div>
                     <p className="mt-2 text-body text-ink">{r.body}</p>
-                    <PostActions id={r.id} authorId={r.authorId} />
+                    <PostActions id={r.id} authorId={r.authorId} threadId={thread.id} />
                   </li>
                 );
               })}
@@ -102,11 +118,6 @@ export default function ThreadPage() {
         </section>
       </main>
 
-      {refusal && (
-        <div className="px-5 pt-3">
-          <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
-        </div>
-      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();

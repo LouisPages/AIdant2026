@@ -34,10 +34,11 @@ export default function CircleFeed() {
   }
 
   const isMember = joined.includes(circle.id);
+  const byRecent = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
   const own = userThreads.filter((t) => t.circleId === circle.id);
   const recent = threads.filter((t) => t.circleId === circle.id && !t.older);
   const archive = threads.filter((t) => t.circleId === circle.id && t.older);
-  const list = [...own, ...recent, ...(older ? archive : [])];
+  const list = [...own, ...recent].sort(byRecent).concat(older ? [...archive].sort(byRecent) : []);
   const hasOlder = archive.length > 0 && !older;
 
   return (

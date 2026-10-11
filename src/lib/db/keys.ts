@@ -12,6 +12,7 @@
  *   CONTENT#nom / META          textes (charte, libellés, pseudos, aides d'urgence, thèmes liés)
  *   MOD#id / META               cas de modération ; MOD#id / DECISION : décision tracée
  *   EMB#type#id / META          vecteur d'embedding (binaire float32) et empreinte du texte source (npm run db:embed)
+ *   NEWS / LETTER#sujet         lettre d'actualités partagée (npm run news:refresh)
  *   DEMO#user / META            profil de démonstration copié à la création d'une session
  *   DEMO#conversation / CONV#… et MSG#… : conversations de démonstration
  *
@@ -48,6 +49,8 @@ export const keys = {
   moderationDecision: (id: string) => typed("moddecision", `MOD#${id}`, "DECISION", id),
   /** Vecteur d'un cercle, fil, ressource ou solution (voir `lib/ai/index-store.ts`). */
   embedding: (kind: string, id: string) => typed("emb", `EMB#${kind}#${id}`, "META", `${kind}#${id}`),
+  /** Lettre partagée d'un sujet. Pas de TTL : la version périmée reste affichée pendant son renouvellement. */
+  newsLetter: (topicId: string) => typed("news", "NEWS", `LETTER#${topicId}`, topicId),
 
   demoUser: (): Keys => ({ PK: "DEMO#user", SK: "META" }),
   demoConv: (memberId: string): Keys => ({ PK: "DEMO#conversation", SK: `CONV#${memberId}` }),

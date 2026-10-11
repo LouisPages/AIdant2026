@@ -173,6 +173,8 @@ export type UserState = {
   userReplies: Record<string, Reply[]>;
   conversations: Record<string, Conversation>;
   reported: string[];
+  /** Démo : identifiants de fils ou réponses masqués (contenu partagé, non détruit). */
+  hiddenIds: string[];
 };
 
 export type Bootstrap = { catalog: Catalog; user: UserState };

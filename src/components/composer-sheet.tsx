@@ -93,6 +93,8 @@ export function ComposerSheet({
           aria-label="Message"
         />
 
+        <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
+
         {similar.length > 0 && (
           <div className="animate-fade rounded-card bg-sky-soft p-4">
             <div className="flex items-center gap-2 text-navy">
@@ -114,8 +116,6 @@ export function ComposerSheet({
             </ul>
           </div>
         )}
-
-        <ModerationNotice refusal={refusal} contested={contested} onContest={contest} />
 
         <Button onClick={publish} disabled={!canPublish || checking}>
           {checking ? "Un instant…" : "Publier"}
