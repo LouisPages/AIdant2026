@@ -6,147 +6,123 @@ Les couleurs sont douces, les cartes aérées, les pseudos évoquent des plantes
 
 Les écrans ci-dessous suivent **Camomille**, un profil de démonstration. Elle accompagne son conjoint, atteint de la maladie de Parkinson. La fatigue pèse. Elle vient chercher de l'écoute et des astuces du quotidien.
 
-## Un accueil qui pose le cadre
-
-Trois promesses, dès la première page : des pairs qui comprennent, une aide discrète pour mettre en relation, et la main gardée sur son identité. On peut commencer seul, arriver depuis Nello, ou reprendre un profil déjà créé.
-
-<p align="center">
-  <img src="docs/screenshots/accueil.png" alt="Écran d'accueil entr'aidant, avec le logo et trois promesses" width="320">
-</p>
-
-## Avant d'entrer, tout est dit
-
-On explique ce que les autres verront (un pseudo, un avatar, une courte présentation) et ce qui reste privé : le nom, les coordonnées, l'agenda, les documents, les informations sur la personne aidée. Le profil Nello n'est jamais partagé.
-
-La charte tient en quelques lignes : parler sans juger, garder les échanges ici, partager son expérience sans donner de conseil médical ou juridique. On ne continue qu'après l'avoir lue.
-
-<p align="center">
-  <img src="docs/screenshots/consentement.png" alt="Écran de consentement et charte de bienveillance" width="320">
-</p>
-
-## Quelques questions, à votre rythme
-
-Six questions suffisent pour proposer des cercles justes : qui vous accompagnez, la situation de la personne aidée, depuis quand et à quel rythme, votre quotidien, votre situation, ce qui vous amène. Chaque réponse peut être passée. Rien n'est montré aux autres.
-
-La dernière étape ressemble à un choix d'envies : fatigue, sommeil, démarches, écoute, astuces… De nouvelles idées apparaissent au fil des choix.
-
-<p align="center">
-  <img src="docs/screenshots/questionnaire.png" alt="Question : qui accompagnez-vous, avec la possibilité de ne pas répondre" width="320">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/questions-themes.png" alt="Écran Ce qui vous amène, avec des pastilles à choisir" width="320">
-</p>
-
-## Un profil, sans donner son nom
-
-Un pseudo, un avatar, une description. Le pseudo peut être proposé d'un geste, la description est rédigée à partir des réponses et se réécrit librement. Les autres membres ne voient que cela.
-
-<p align="center">
-  <img src="docs/screenshots/profil-creation.png" alt="Création du profil de Camomille, avec avatar et description" width="320">
-</p>
-
-## Des cercles qui vous ressemblent
-
-Les cercles proposés arrivent avec une raison lisible : même maladie, même lien, même besoin du moment. On en rejoint un ou plusieurs, on peut en chercher d'autres, et on change d'avis quand on veut.
-
-<p align="center">
-  <img src="docs/screenshots/cercles-suggeres.png" alt="Cercles recommandés pour Camomille, avec la raison de chaque suggestion" width="320">
-</p>
-
-## Votre fil, et une lettre de la semaine
-
-L'onglet Cercles rassemble les échanges qui comptent, filtrables d'un geste. Une lettre épinglée ouvre la semaine : un mot adressé à votre situation, avec ses sources. En dessous, le cercle du moment, le nombre d'aidants, et le bouton pour écrire.
-
-<p align="center">
-  <img src="docs/screenshots/fil.png" alt="Fil des cercles avec la newsletter de la semaine et le cercle Parkinson" width="320">
-</p>
-
-## Un cercle, des échanges concrets
-
-Chaque cercle a son nom, sa couleur, sa description et sa charte, repliée tant qu'on n'en a pas besoin. On peut lire sans écrire. Les messages parlent du quotidien : les nuits, le couple, la fatigue, les petites victoires.
-
-<p align="center">
-  <img src="docs/screenshots/cercle.png" alt="Cercle Accompagner son conjoint et ses derniers échanges" width="320">
-</p>
-
-Ouvrir une discussion montre la question, les réponses, et deux gestes discrets : écrire en privé à l'auteur, ou signaler un message.
-
-<p align="center">
-  <img src="docs/screenshots/discussion.png" alt="Discussion sur les nuits agitées, avec les réponses des autres aidants" width="320">
-</p>
-
-## Écrire sans se presser
-
-Trois façons de prendre la parole : poser une question, partager une astuce, raconter son vécu. Le titre est facultatif. Tant que le texte est vide, rien n'est publié.
-
-Si un message blesse, juge, donne un conseil médical ou laisse des coordonnées, il reste dans le champ, avec une explication bienveillante. On peut reformuler, ou demander qu'une personne relise. Un message de détresse, lui, n'est jamais retiré : il est publié, une personne de l'équipe est prévenue, et l'auteur voit une carte d'aide qu'il peut fermer.
-
-<p align="center">
-  <img src="docs/screenshots/ecrire.png" alt="Fenêtre pour écrire dans un cercle : question, astuce ou vécu" width="320">
-</p>
-
-## Des pistes choisies pour votre situation
-
-L'onglet Solutions propose d'abord des articles et des guides Nello, courts, liés à ce que vous avez indiqué. Puis des suggestions qui disent pourquoi elles apparaissent : la culpabilité mentionnée, la fatigue, le nombre d'heures. Enfin, des aidants au parcours proche, que l'on contacte seulement si on le souhaite.
-
-Plus bas, deux idées à venir : un binôme dans la durée, et des cafés d'aidants en visio.
-
-<p align="center">
-  <img src="docs/screenshots/solutions.png" alt="Articles Nello proposés selon la situation" width="320">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/solutions-suggestions.png" alt="Suggestions personnalisées, chacune avec sa raison" width="320">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/solutions-personnes.png" alt="Aidants au parcours proche, avec un bouton pour proposer d'échanger" width="320">
-</p>
-
-## Parler en privé, seulement à deux
-
-La messagerie liste les échanges déjà acceptés. Un menu sépare les messages et les demandes : personne n'arrive dans une conversation sans accord. On peut couper les demandes depuis le profil.
-
-<p align="center">
-  <img src="docs/screenshots/messages.png" alt="Liste des messages privés" width="320">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/conversation.png" alt="Conversation privée avec Tilleul" width="320">
-</p>
-
-## Votre profil, vos réglages
-
-Le profil rappelle le pseudo, la description publique, et les caractéristiques qui servent aux suggestions. Ces caractéristiques restent privées. Quatre réglages se changent d'un geste : recevoir des demandes, voir des aidants à découvrir, voir les suggestions, limiter le fil à ses cercles. Les notifications s'arrêtent la nuit, entre 22 h et 8 h.
-
-<p align="center">
-  <img src="docs/screenshots/profil.png" alt="Profil de Camomille, visible uniquement sous pseudonyme" width="320">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/profil-preferences.png" alt="Préférences et cercles rejoints" width="320">
-</p>
-
-## Vos données restent les vôtres
-
-On revoit ses réponses, on quitte un cercle, on exporte ce qui a été enregistré, on retire son consentement, ou on supprime le profil communautaire. Le compte Nello, lui, ne change pas.
-
-<p align="center">
-  <img src="docs/screenshots/donnees.png" alt="Récapitulatif des réponses enregistrées" width="320">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/donnees-droits.png" alt="Quitter un cercle, exporter, retirer le consentement ou supprimer le profil" width="320">
-</p>
-
-## Une personne derrière, pour les cas sensibles
-
-La plupart des messages sont publiés tout de suite. Ceux qui jugent, conseillent une dose, ou attaquent quelqu'un sont mis de côté. L'écran de modération montre le texte, la raison, une reformulation plus douce, et trois choix : inviter à reformuler, publier tel quel, ou retirer. Chaque décision est tracée.
-
-<p align="center">
-  <img src="docs/screenshots/moderation.png" alt="Cas de modération : un message jugeant, avec une reformulation proposée" width="320">
-</p>
+<table>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/accueil.png" alt="Écran d'accueil entr'aidant" width="220"><br>
+      <strong>L'accueil</strong><br>
+      Trois promesses : des pairs, une aide discrète, et la main sur son identité. On commence seul, depuis Nello, ou avec un profil déjà créé.
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/consentement.png" alt="Consentement et charte" width="220"><br>
+      <strong>Avant d'entrer</strong><br>
+      On voit ce qui est public et ce qui reste privé, profil Nello compris. La charte se lit avant de continuer.
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/questionnaire.png" alt="Première question du questionnaire" width="220"><br>
+      <strong>Quelques questions</strong><br>
+      Six questions suffisent, et chacune peut être passée. Elles servent aux suggestions et restent invisibles des autres.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/questions-themes.png" alt="Choix de ce qui vous amène" width="220"><br>
+      <strong>Ce qui vous amène</strong><br>
+      Fatigue, sommeil, démarches, écoute, astuces : on choisit ce qui parle. De nouvelles idées apparaissent au fil des choix.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/profil-creation.png" alt="Création du profil de Camomille" width="220"><br>
+      <strong>Un profil anonyme</strong><br>
+      Un pseudo, un avatar, une description proposée puis réécrite librement. Les autres ne voient que cela.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/cercles-suggeres.png" alt="Cercles recommandés" width="220"><br>
+      <strong>Des cercles pour vous</strong><br>
+      Chaque cercle arrive avec sa raison : même maladie, même lien, même besoin. On en rejoint un ou plusieurs, et on change d'avis quand on veut.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/fil.png" alt="Fil des cercles et newsletter" width="220"><br>
+      <strong>Le fil</strong><br>
+      Les échanges se filtrent d'un geste, avec une lettre de la semaine pour votre situation. En dessous, le cercle du moment et le bouton pour écrire.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/cercle.png" alt="Cercle Accompagner son conjoint" width="220"><br>
+      <strong>Un cercle</strong><br>
+      Chaque cercle a sa couleur, sa description et sa charte, repliée tant qu'on n'en a pas besoin. On peut lire sans écrire.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/discussion.png" alt="Discussion sur les nuits agitées" width="220"><br>
+      <strong>Une discussion</strong><br>
+      La question et les réponses tiennent sur un écran. On peut écrire en privé à l'auteur, ou signaler un message.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/ecrire.png" alt="Écrire dans un cercle" width="220"><br>
+      <strong>Écrire</strong><br>
+      Question, astuce ou vécu : le titre est facultatif. Un message blessant reste dans le champ ; un message de détresse est publié et une personne est prévenue.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/solutions.png" alt="Articles Nello" width="220"><br>
+      <strong>Des articles</strong><br>
+      Des guides Nello, courts, liés à ce que vous avez indiqué.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/solutions-suggestions.png" alt="Suggestions personnalisées" width="220"><br>
+      <strong>Des pistes</strong><br>
+      Chaque suggestion dit pourquoi elle apparaît : la culpabilité, la fatigue, le nombre d'heures.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/solutions-personnes.png" alt="Aidants à découvrir" width="220"><br>
+      <strong>Des personnes</strong><br>
+      Des aidants au parcours proche, contactés seulement si on le souhaite. Un binôme et des cafés en visio sont prévus.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/messages.png" alt="Liste des messages" width="220"><br>
+      <strong>Les messages</strong><br>
+      Les échanges déjà acceptés sont séparés des demandes. On peut couper les demandes depuis le profil.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/conversation.png" alt="Conversation avec Tilleul" width="220"><br>
+      <strong>À deux</strong><br>
+      La conversation s'ouvre seulement avec l'accord des deux. On y parle au calme, à partir d'une discussion du cercle.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/profil.png" alt="Profil de Camomille" width="220"><br>
+      <strong>Le profil</strong><br>
+      Le pseudo et la description sont publics. Les caractéristiques qui servent aux suggestions restent privées.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/profil-preferences.png" alt="Préférences et cercles rejoints" width="220"><br>
+      <strong>Les réglages</strong><br>
+      Demandes, aidants à découvrir, suggestions, fil limité à ses cercles : tout se coupe d'un geste. Les notifications s'arrêtent entre 22 h et 8 h.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/donnees.png" alt="Réponses enregistrées" width="220"><br>
+      <strong>Vos réponses</strong><br>
+      On revoit ce que l'on a indiqué, et on quitte un cercle quand on veut.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/donnees-droits.png" alt="Exporter, retirer le consentement ou supprimer le profil" width="220"><br>
+      <strong>Vos données</strong><br>
+      On exporte, on retire son consentement, ou on supprime le profil communautaire. Le compte Nello ne change pas.
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/moderation.png" alt="Cas de modération avec reformulation" width="220"><br>
+      <strong>Les cas sensibles</strong><br>
+      La plupart des messages sont publiés tout de suite. Ceux qui jugent ou conseillent une dose sont mis de côté, avec une reformulation et trois choix.
+    </td>
+    <td></td>
+  </tr>
+</table>
 
 ---
 
