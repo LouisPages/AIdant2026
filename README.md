@@ -1,4 +1,4 @@
-﻿# Entr'aidant
+﻿# Entr'aidant - Hackathon AIdant 2026, organisée par le Sopra Steria et le Crédit Agricole 
 
 Un espace calme pour les personnes qui accompagnent un proche. On y arrive sous un pseudonyme, on trouve des aidants dans une situation proche de la sienne, et on échange à son rythme. Rien n'est obligatoire. L'application propose, la personne décide.
 
